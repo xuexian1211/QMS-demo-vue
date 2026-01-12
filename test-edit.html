@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑页面测试</title>
+</head>
+<body>
+    <h1>编辑页面功能测试</h1>
+    
+    <h2>测试步骤：</h2>
+    <ol>
+        <li>访问编辑页面：<a href="http://localhost:3001/#/production-quality/exception-handling/material-disposal/edit?id=1" target="_blank">点击这里</a></li>
+        <li>打开浏览器开发者工具（F12）</li>
+        <li>查看Console标签页的错误信息</li>
+        <li>测试以下功能：
+            <ul>
+                <li>点击"返回"按钮</li>
+                <li>点击不同的Tab页签</li>
+                <li>填写表单数据</li>
+            </ul>
+        </li>
+    </ol>
+    
+    <h2>预期结果：</h2>
+    <ul>
+        <li>页面应该正常加载并显示表单数据</li>
+        <li>返回按钮应该跳转到列表页面</li>
+        <li>Tab切换应该正常工作</li>
+        <li>控制台不应该有JavaScript错误</li>
+    </ul>
+    
+    <h2>常见问题排查：</h2>
+    <ul>
+        <li>如果页面空白，检查控制台是否有JavaScript错误</li>
+        <li>如果路由不工作，检查路由配置是否正确</li>
+        <li>如果数据不显示，检查数据初始化逻辑</li>
+    </ul>
+    
+    <script>
+        console.log('测试页面已加载');
+        console.log('当前时间:', new Date().toLocaleString());
+    </script>
+</body>
+</html>

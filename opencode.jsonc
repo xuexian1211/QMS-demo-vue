@@ -1,0 +1,40 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    // 你的MCP工具，我不建议添加太多，等会 oh-my-opencode 也会加工具的
+    "mcp": {
+        "context7": {
+            "type": "local",
+            "command": [
+                "pnpx",
+                "@upstash/context7-mcp"
+            ],
+            "enabled": true
+        }
+    },
+    "provider": {
+        "anthropic": {
+            "options": {
+                "baseURL": "https://中转站网址/v1"
+            }
+        },
+        "openai": {
+            "options": {
+                "baseURL": "https://中转站网址/v1"
+            },
+            "models": {
+                // 注意，GPT系列似乎必须有下面的 include 和 store 字段及其内容，否则只能发送一条消息
+                "gpt-5.2": {
+                    "options": {
+                        "include": [
+                            "reasoning.encrypted_content"
+                        ],
+                        "store": false,
+                        "reasoningEffort": "high",
+                        "textVerbosity": "high",
+                        "reasoningSummary": "auto",
+                    },
+                }
+            },
+        }
+    }
+}
