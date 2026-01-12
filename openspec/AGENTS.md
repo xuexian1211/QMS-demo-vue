@@ -387,6 +387,111 @@ Only add complexity with:
 - Concrete scale requirements (>1000 users, >100MB data)
 - Multiple proven use cases requiring abstraction
 
+### Multi-Phase Proposals
+For complex refactoring or feature additions, use phased proposals:
+
+```
+openspec/changes/[change-id]/
+├── proposal.md           # Why, what, impact (per phase)
+├── tasks.md              # Implementation checklist (per phase)
+├── design.md             # Technical decisions (per phase)
+├── acceptance-criteria.md # Detailed验收标准 (per phase)
+├── README.md             # Phase overview and guide
+├── COMPARISON.md         # Changes comparison (optional)
+└── specs/                # Delta changes
+    └── [capability]/
+        └── spec.md
+```
+
+Each phase should have:
+- Clear scope and objectives
+- Defined acceptance criteria
+- Task breakdown with dependencies
+- Sequential phases with clear handoff points
+
+### Task Organization
+Organize tasks by phases and modules:
+
+```markdown
+## Phase 1: [Phase Name]
+
+### Task 1.1: [Task Name]
+- [ ] 1.1.1 Sub-task 1
+- [ ] 1.1.2 Sub-task 2
+
+### Task 1.2: [Task Name]
+- [ ] 1.2.1 Sub-task 1
+
+## Phase 2: [Phase Name]
+
+### Task 2.1: [Task Name]
+```
+
+### Dependency and Parallelization
+Document task dependencies and parallelization opportunities:
+
+```markdown
+## Dependencies
+
+- Task 1.1 can proceed independently
+- Task 2.1 depends on Task 1.1 completion
+- Task 3.1 can run in parallel with Task 2.1
+
+## Parallelization Opportunities
+
+- Tasks 1.1, 1.2, 1.3 can be developed in parallel
+- Tasks 2.1 and 2.2 can run in parallel
+```
+
+### Acceptance Criteria Template
+Use `acceptance-criteria.md` for detailed validation requirements:
+
+```markdown
+# 验收标准: [Change Name]
+
+## 总体验收标准
+
+### 功能完整性验收
+- [ ] 所有计划的功能模块均已实现
+- [ ] 所有页面能够正常访问和操作
+
+### 代码质量验收
+- [ ] 代码通过 TypeScript 类型检查
+- [ ] 代码符合项目规范
+
+### 性能验收
+- [ ] 页面首次加载时间 < 500ms
+- [ ] 表格渲染 100 条记录时间 < 200ms
+
+### UI/UX验收
+- [ ] 所有页面布局符合设计规范
+- [ ] 所有交互操作流畅无卡顿
+
+## 模块级验收标准
+
+### [Module Name]
+#### 页面验收
+- [ ] 页面路径 /path 可访问
+- [ ] 导航菜单显示正常
+
+#### 功能验收
+- [ ] 功能1正常
+- [ ] 功能2正常
+
+## 最终验收条件
+
+### 必须满足的条件
+1. 所有功能验收项目通过率 ≥ 95%
+2. 所有UI/UX验收项目通过率 = 100%
+3. 无阻塞性Bug
+```
+
+Include acceptance-criteria.md in your change directory when:
+- Change has multiple functional modules
+- Change requires specific performance targets
+- Change needs detailed UI/UX validation
+- Change involves data migration or integrity
+
 ### Clear References
 - Use `file.ts:42` format for code locations
 - Reference specs as `specs/auth/spec.md`
