@@ -29,8 +29,7 @@
               <!-- 质量检验 -->
               <a-sub-menu key="quality-inspection">
                 <template #title>🔍 质量检验</template>
-                <a-menu-item key="/production-quality/quality-inspection/inspection-templates"
-                  @click="navigateTo('/production-quality/quality-inspection/inspection-templates')">检验模板</a-menu-item>
+
                 <a-menu-item key="/production-quality/quality-inspection/inspection-rules"
                   @click="navigateTo('/production-quality/quality-inspection/inspection-rules')">检验规则</a-menu-item>
                 <a-menu-item key="/production-quality/quality-inspection/iqc-checklist"
@@ -58,21 +57,38 @@
               </a-sub-menu>
             </a-sub-menu>
             <a-sub-menu key="inspection-model">
-              <template #title>🧪 检验数据模型</template>
-              <a-menu-item key="/inspection-model/defect-phenomena"
-                @click="navigateTo('/inspection-model/defect-phenomena')">不良现象管理</a-menu-item>
-              <a-menu-item key="/inspection-model/defect-causes"
-                @click="navigateTo('/inspection-model/defect-causes')">不良原因管理</a-menu-item>
-              <a-menu-item key="/inspection-model/gauge-ledgers"
-                @click="navigateTo('/inspection-model/gauge-ledgers')">量检具台账</a-menu-item>
-              <a-menu-item key="/inspection-model/insp-methods"
-                @click="navigateTo('/inspection-model/insp-methods')">检验方法管理</a-menu-item>
-              <a-menu-item key="/inspection-model/sampling-plans"
-                @click="navigateTo('/inspection-model/sampling-plans')">抽样方案管理</a-menu-item>
-              <a-menu-item key="/inspection-model/inspection-items"
-                @click="navigateTo('/inspection-model/inspection-items')">检验项目管理</a-menu-item>
-              <a-menu-item key="/inspection-model/insp-plans"
-                @click="navigateTo('/inspection-model/insp-plans')">检验方案管理</a-menu-item>
+              <template #title>🧪 质量主数据</template>
+
+              <!-- 不良管理 -->
+              <a-sub-menu key="defect-management">
+                <template #title>🚫 不良管理</template>
+                <a-menu-item key="/inspection-model/defect-phenomena"
+                  @click="navigateTo('/inspection-model/defect-phenomena')">不良现象</a-menu-item>
+                <a-menu-item key="/inspection-model/defect-causes"
+                  @click="navigateTo('/inspection-model/defect-causes')">不良原因</a-menu-item>
+              </a-sub-menu>
+
+              <!-- 检验标准 -->
+              <a-sub-menu key="insp-standards">
+                <template #title>📏 检验标准</template>
+                <a-menu-item key="/inspection-model/inspection-items"
+                  @click="navigateTo('/inspection-model/inspection-items')">检验项目</a-menu-item>
+                <a-menu-item key="/inspection-model/insp-methods"
+                  @click="navigateTo('/inspection-model/insp-methods')">检验方法</a-menu-item>
+                <a-menu-item key="/inspection-model/sampling-plans"
+                  @click="navigateTo('/inspection-model/sampling-plans')">抽样方案</a-menu-item>
+                <a-menu-item key="/inspection-model/gauge-ledgers"
+                  @click="navigateTo('/inspection-model/gauge-ledgers')">量检具台账</a-menu-item>
+              </a-sub-menu>
+
+              <!-- 检验策划 -->
+              <a-sub-menu key="insp-planning">
+                <template #title>📝 检验策划</template>
+                <a-menu-item key="/inspection-model/insp-plans"
+                  @click="navigateTo('/inspection-model/insp-plans')">检验方案</a-menu-item>
+                <a-menu-item key="/inspection-model/insp-templates"
+                  @click="navigateTo('/inspection-model/insp-templates')">检验模板</a-menu-item>
+              </a-sub-menu>
             </a-sub-menu>
             <a-menu-item key="/supplier" @click="navigateTo('/supplier')">
               <span>🏭 供方管理</span>
@@ -97,33 +113,35 @@
               <a-sub-menu key="basic-data">
                 <template #title>📋 基础数据</template>
                 <a-menu-item key="/basic-data/material-category"
-                  @click="navigateTo('/basic-data/material-category')">物料分类</a-menu-item>
-                <a-menu-item key="/basic-data/material" @click="navigateTo('/basic-data/material')">物料/产品</a-menu-item>
-                <a-menu-item key="/basic-data/unit" @click="navigateTo('/basic-data/unit')">计量单位</a-menu-item>
+                  @click.stop="navigateTo('/basic-data/material-category')">物料分类</a-menu-item>
+                <a-menu-item key="/basic-data/material"
+                  @click.stop="navigateTo('/basic-data/material')">物料/产品</a-menu-item>
+                <a-menu-item key="/basic-data/unit" @click.stop="navigateTo('/basic-data/unit')">计量单位</a-menu-item>
                 <a-menu-item key="/basic-data/process-route"
-                  @click="navigateTo('/basic-data/process-route')">工艺路线</a-menu-item>
+                  @click.stop="navigateTo('/basic-data/process-route')">工艺路线</a-menu-item>
                 <a-menu-item key="/basic-data/production-team"
-                  @click="navigateTo('/basic-data/production-team')">生产班组</a-menu-item>
+                  @click.stop="navigateTo('/basic-data/production-team')">生产班组</a-menu-item>
                 <a-menu-item key="/basic-data/customer-archive"
-                  @click="navigateTo('/basic-data/customer-archive')">客户档案</a-menu-item>
+                  @click.stop="navigateTo('/basic-data/customer-archive')">客户档案</a-menu-item>
                 <a-menu-item key="/basic-data/supplier-archive"
-                  @click="navigateTo('/basic-data/supplier-archive')">供应商档案</a-menu-item>
+                  @click.stop="navigateTo('/basic-data/supplier-archive')">供应商档案</a-menu-item>
                 <a-menu-item key="/basic-data/storage-location"
-                  @click="navigateTo('/basic-data/storage-location')">存储地点</a-menu-item>
+                  @click.stop="navigateTo('/basic-data/storage-location')">存储地点</a-menu-item>
               </a-sub-menu>
 
               <a-sub-menu key="system">
                 <template #title>⚙️ 系统管理</template>
-                <a-menu-item key="/system" @click="navigateTo('/system')">系统概览</a-menu-item>
-                <a-menu-item key="/system/announcement" @click="navigateTo('/system/announcement')">系统公告</a-menu-item>
-                <a-menu-item key="/system/config" @click="navigateTo('/system/config')">系统配置</a-menu-item>
-                <a-menu-item key="/system/menu" @click="navigateTo('/system/menu')">菜单管理</a-menu-item>
-                <a-menu-item key="/system/log" @click="navigateTo('/system/log')">系统日志</a-menu-item>
-                <a-menu-item key="/system/api-log" @click="navigateTo('/system/api-log')">接口日志</a-menu-item>
-                <a-menu-item key="/system/schedule" @click="navigateTo('/system/schedule')">系统调度</a-menu-item>
-                <a-menu-item key="/system/monitor" @click="navigateTo('/system/monitor')">系统监控</a-menu-item>
+                <a-menu-item key="/system" @click.stop="navigateTo('/system')">系统概览</a-menu-item>
+                <a-menu-item key="/system/announcement"
+                  @click.stop="navigateTo('/system/announcement')">系统公告</a-menu-item>
+                <a-menu-item key="/system/config" @click.stop="navigateTo('/system/config')">系统配置</a-menu-item>
+                <a-menu-item key="/system/menu" @click.stop="navigateTo('/system/menu')">菜单管理</a-menu-item>
+                <a-menu-item key="/system/log" @click.stop="navigateTo('/system/log')">系统日志</a-menu-item>
+                <a-menu-item key="/system/api-log" @click.stop="navigateTo('/system/api-log')">接口日志</a-menu-item>
+                <a-menu-item key="/system/schedule" @click.stop="navigateTo('/system/schedule')">系统调度</a-menu-item>
+                <a-menu-item key="/system/monitor" @click.stop="navigateTo('/system/monitor')">系统监控</a-menu-item>
                 <a-menu-item key="/system/data-dictionary"
-                  @click="navigateTo('/system/data-dictionary')">数据字典</a-menu-item>
+                  @click.stop="navigateTo('/system/data-dictionary')">数据字典</a-menu-item>
               </a-sub-menu>
             </a-sub-menu>
           </a-menu>

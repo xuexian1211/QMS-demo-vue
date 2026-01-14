@@ -150,6 +150,7 @@
     EditOutlined,
     DeleteOutlined
   } from '@ant-design/icons-vue'
+  import { useExport } from '@/utils/excel'
 
   // --- 状态定义 ---
   const categoryLoading = ref(false)
@@ -374,7 +375,21 @@
   }
 
   const handleExport = () => {
-    message.success('导出任务已开始...')
+    if (phenomenaData.value.length === 0) {
+      message.warning('暂无数据可导出')
+      return
+    }
+    // 使用导出工具
+    const columns = [
+      { title: '现象代码', dataIndex: 'code' },
+      { title: '现象名称', dataIndex: 'name' },
+      { title: '严重等级', dataIndex: 'severity' },
+      { title: '适用工序', dataIndex: 'processType' },
+      { title: '描述', dataIndex: 'description' }
+    ]
+    const { exportToCSV } = useExport()
+    exportToCSV(phenomenaData.value, columns, `不良现象_${selectedCategory.value?.categoryName || '导出'}`)
+    message.success('导出成功')
   }
 
   const getSeverityColor = (level: string) => {

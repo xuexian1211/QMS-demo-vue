@@ -1,736 +1,479 @@
 <template>
-  <div class="process-route">
-    <div class="page-header">
-      <h2>工艺路线管理</h2>
-      <a-button type="primary" @click="showAddModal">
-        <template #icon><PlusOutlined /></template>
-        新增路线
-      </a-button>
-    </div>
-
-    <div class="search-form">
-      <a-form layout="inline" :model="searchForm" @finish="handleSearch">
-        <a-form-item label="路线编码">
-          <a-input 
-            v-model:value="searchForm.routeCode" 
-            placeholder="请输入路线编码"
-            allow-clear
-            style="width: 200px"
-          />
-        </a-form-item>
-        <a-form-item label="路线名称">
-          <a-input 
-            v-model:value="searchForm.routeName" 
-            placeholder="请输入路线名称"
-            allow-clear
-            style="width: 200px"
-          />
-        </a-form-item>
-        <a-form-item label="适用产品">
-          <a-input 
-            v-model:value="searchForm.productName" 
-            placeholder="请输入适用产品"
-            allow-clear
-            style="width: 200px"
-          />
-        </a-form-item>
-        <a-form-item label="状态">
-          <a-select 
-            v-model:value="searchForm.status" 
-            placeholder="请选择状态"
-            allow-clear
-            style="width: 120px"
-          >
-            <a-select-option value="1">启用</a-select-option>
-            <a-select-option value="0">禁用</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" html-type="submit">
-            <template #icon><SearchOutlined /></template>
-            搜索
-          </a-button>
-          <a-button style="margin-left: 8px" @click="resetSearch">重置</a-button>
-        </a-form-item>
-      </a-form>
-    </div>
-
-    <div class="table-container">
-      <a-table 
-        :columns="columns" 
-        :data-source="dataSource" 
-        :loading="loading"
-        :pagination="pagination"
-        row-key="id"
-        @change="handleTableChange"
-        :expandable="{ expandedRowRender, expandedRowKeys, onExpandedRowsChange }"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
-            <a-tag :color="record.status === '1' ? 'green' : 'red'">
-              {{ record.status === '1' ? '启用' : '禁用' }}
-            </a-tag>
-          </template>
-          <template v-if="column.key === 'action'">
+    <div class="page-container">
+        <div class="toolbar">
             <a-space>
-              <a-button type="link" size="small" @click="handleEdit(record)">
-                <template #icon><EditOutlined /></template>
-                编辑
-              </a-button>
-              <a-button type="link" size="small" @click="handleView(record)">
-                <template #icon><EyeOutlined /></template>
-                查看
-              </a-button>
-              <a-popconfirm
-                title="确定要删除这条工艺路线吗？"
-                @confirm="handleDelete(record.id)"
-                ok-text="确定"
-                cancel-text="取消"
-              >
-                <a-button type="link" size="small" danger>
-                  <template #icon><DeleteOutlined /></template>
-                  删除
+                <a-button type="primary" @click="handleAdd">
+                    <template #icon>
+                        <PlusOutlined />
+                    </template>新增
                 </a-button>
-              </a-popconfirm>
+                <a-button :disabled="selectedRowKeys.length !== 1" @click="handleEdit">
+                    <template #icon>
+                        <EditOutlined />
+                    </template>编辑
+                </a-button>
+                <a-button danger :disabled="selectedRowKeys.length === 0" @click="handleBatchDelete">
+                    <template #icon>
+                        <DeleteOutlined />
+                    </template>删除
+                </a-button>
+                <a-button @click="handleExport">
+                    <template #icon>
+                        <ExportOutlined />
+                    </template>导出
+                </a-button>
+                <a-button @click="loadData">
+                    <template #icon>
+                        <ReloadOutlined />
+                    </template>刷新
+                </a-button>
             </a-space>
-          </template>
-        </template>
-      </a-table>
+        </div>
+
+        <a-card class="search-card" :bordered="false">
+            <a-form layout="inline" :model="queryParam">
+                <a-form-item label="路线编码">
+                    <a-input v-model:value="queryParam.code" placeholder="请输入" allow-clear />
+                </a-form-item>
+                <a-form-item label="路线名称">
+                    <a-input v-model:value="queryParam.name" placeholder="请输入" allow-clear />
+                </a-form-item>
+                <a-form-item label="关联物料">
+                    <a-input v-model:value="queryParam.material" placeholder="请输入" allow-clear />
+                </a-form-item>
+                <a-form-item>
+                    <a-button type="primary" @click="handleSearch">查询</a-button>
+                    <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
+                </a-form-item>
+            </a-form>
+        </a-card>
+
+        <div class="table-container">
+            <a-table :columns="columns" :data-source="tableData" :loading="loading" row-key="id" size="middle"
+                :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }" :pagination="pagination"
+                @change="handleTableChange">
+                <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'status'">
+                        <a-tag :color="getStatusColor(record.status)">
+                            {{ getStatusText(record.status) }}
+                        </a-tag>
+                    </template>
+                    <template v-if="column.key === 'action'">
+                        <a-space>
+                            <a-button type="link" size="small" @click="handleView(record)">查看</a-button>
+                            <a-divider type="vertical" />
+                            <a-button type="link" size="small" @click="handleEditPage(record)">编辑</a-button>
+                            <a-divider type="vertical" />
+                            <a-button type="link" danger size="small" @click="handleDelete(record)">删除</a-button>
+                        </a-space>
+                    </template>
+                </template>
+                <!-- Nested Table for Details -->
+                <template #expandedRowRender="{ record }">
+                    <a-table :columns="innerColumns" :data-source="record.steps" :pagination="false" size="small">
+                    </a-table>
+                </template>
+            </a-table>
+        </div>
+
+        <!-- Edit Modal -->
+        <a-modal v-model:visible="modalVisible" :title="isEdit ? '编辑工艺路线' : '新增工艺路线'" width="800px" @ok="handleSave">
+            <a-tabs v-model:activeKey="activeTab">
+                <a-tab-pane key="basic" tab="基本信息">
+                    <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
+                        <a-row :gutter="16">
+                            <a-col :span="12">
+                                <a-form-item label="路线编码" name="code">
+                                    <a-input v-model:value="formState.code" placeholder="请输入" :disabled="isEdit" />
+                                </a-form-item>
+                            </a-col>
+                            <a-col :span="12">
+                                <a-form-item label="路线名称" name="name">
+                                    <a-input v-model:value="formState.name" placeholder="请输入" />
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+                        <a-row :gutter="16">
+                            <a-col :span="12">
+                                <a-form-item label="关联物料" name="materialId">
+                                    <a-select v-model:value="formState.materialId" show-search placeholder="请选择物料"
+                                        :filter-option="filterMaterialOption">
+                                        <a-select-option v-for="m in materialOptions" :key="m.id" :value="m.id">
+                                            {{ m.code }} - {{ m.name }}
+                                        </a-select-option>
+                                    </a-select>
+                                </a-form-item>
+                            </a-col>
+                            <a-col :span="12">
+                                <a-form-item label="版本号" name="version">
+                                    <a-input v-model:value="formState.version" placeholder="如：V1.0" />
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+                        <a-row :gutter="16">
+                            <a-col :span="12">
+                                <a-form-item label="状态" name="status">
+                                    <a-select v-model:value="formState.status">
+                                        <a-select-option value="Draft">草稿</a-select-option>
+                                        <a-select-option value="Active">生效</a-select-option>
+                                        <a-select-option value="Obsolete">失效</a-select-option>
+                                    </a-select>
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+                        <a-form-item label="描述" name="description">
+                            <a-textarea v-model:value="formState.description" :rows="3" />
+                        </a-form-item>
+                    </a-form>
+                </a-tab-pane>
+
+                <a-tab-pane key="steps" tab="工序明细">
+                    <div style="margin-bottom: 8px;">
+                        <a-button type="dashed" block @click="handleAddStep">
+                            <PlusOutlined /> 添加工序
+                        </a-button>
+                    </div>
+                    <a-table :columns="editStepColumns" :data-source="formState.steps" :pagination="false" size="small"
+                        row-key="id">
+                        <template #bodyCell="{ column, record, index }">
+                            <template v-if="column.key === 'opSeq'">
+                                <a-input-number v-model:value="record.opSeq" :min="1" style="width: 60px" />
+                            </template>
+                            <template v-else-if="column.key === 'opName'">
+                                <a-input v-model:value="record.opName" />
+                            </template>
+                            <template v-else-if="column.key === 'workCenter'">
+                                <a-input v-model:value="record.workCenter" />
+                            </template>
+                            <template v-else-if="column.key === 'description'">
+                                <a-input v-model:value="record.description" />
+                            </template>
+                            <template v-else-if="column.key === 'inspConfig'">
+                                <a-space>
+                                    <a-tag v-if="record.hasFirstInsp" color="blue" size="small">首检</a-tag>
+                                    <a-tag v-if="record.hasPatrolInsp" color="green" size="small">巡检</a-tag>
+                                    <a-tag v-if="record.hasFinalInsp" color="orange" size="small">末检</a-tag>
+                                    <a-button type="link" size="small" @click="handleConfigInsp(record)">配置</a-button>
+                                </a-space>
+                            </template>
+                            <template v-else-if="column.key === 'action'">
+                                <a-button type="link" danger size="small" @click="handleRemoveStep(index)">移除</a-button>
+                            </template>
+                        </template>
+                    </a-table>
+                </a-tab-pane>
+            </a-tabs>
+        </a-modal>
+
+        <!-- 工序检验配置弹窗 -->
+        <OperationInspConfigModal v-model:visible="inspConfigModalVisible" :operationInfo="currentOperation"
+            @save="handleSaveInspConfig" />
     </div>
-
-    <!-- 新增/编辑模态框 -->
-    <a-modal
-      v-model:visible="modalVisible"
-      :title="modalTitle"
-      width="1000px"
-      @ok="handleSubmit"
-      @cancel="handleCancel"
-    >
-      <a-form
-        ref="formRef"
-        :model="formData"
-        :rules="rules"
-        layout="vertical"
-      >
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="路线编码" name="routeCode">
-              <a-input v-model:value="formData.routeCode" placeholder="请输入路线编码" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="路线名称" name="routeName">
-              <a-input v-model:value="formData.routeName" placeholder="请输入路线名称" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="适用产品" name="productId">
-              <a-select v-model:value="formData.productId" placeholder="请选择适用产品">
-                <a-select-option value="1">电子控制器</a-select-option>
-                <a-select-option value="2">电路板组件</a-select-option>
-                <a-select-option value="3">机械外壳</a-select-option>
-                <a-select-option value="4">传感器模块</a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="版本" name="version">
-              <a-input v-model:value="formData.version" placeholder="请输入版本号" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="8">
-            <a-form-item label="标准工时(分钟)" name="standardTime">
-              <a-input-number 
-                v-model:value="formData.standardTime" 
-                placeholder="请输入标准工时"
-                :min="0"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item label="产能(件/小时)" name="capacity">
-              <a-input-number 
-                v-model:value="formData.capacity" 
-                placeholder="请输入产能"
-                :min="0"
-                style="width: 100%"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item label="状态" name="status">
-              <a-radio-group v-model:value="formData.status">
-                <a-radio value="1">启用</a-radio>
-                <a-radio value="0">禁用</a-radio>
-              </a-radio-group>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item label="描述" name="description">
-          <a-textarea 
-            v-model:value="formData.description" 
-            placeholder="请输入工艺路线描述"
-            :rows="3"
-          />
-        </a-form-item>
-        
-        <a-divider>工序配置</a-divider>
-        <a-form-item label="工序列表">
-          <a-table 
-            :columns="processColumns" 
-            :data-source="formData.processes" 
-            :pagination="false"
-            size="small"
-          >
-            <template #bodyCell="{ column, record, index }">
-              <template v-if="column.key === 'processName'">
-                <a-input v-model:value="record.processName" placeholder="工序名称" />
-              </template>
-              <template v-if="column.key === 'workCenter'">
-                <a-select v-model:value="record.workCenter" placeholder="工作中心">
-                  <a-select-option value="WC001">装配车间</a-select-option>
-                  <a-select-option value="WC002">测试车间</a-select-option>
-                  <a-select-option value="WC003">包装车间</a-select-option>
-                </a-select>
-              </template>
-              <template v-if="column.key === 'standardTime'">
-                <a-input-number 
-                  v-model:value="record.standardTime" 
-                  placeholder="标准工时"
-                  :min="0"
-                  style="width: 100%"
-                />
-              </template>
-              <template v-if="column.key === 'action'">
-                <a-button type="link" size="small" danger @click="removeProcess(index)">
-                  <template #icon><DeleteOutlined /></template>
-                  删除
-                </a-button>
-              </template>
-            </template>
-            <template #footer>
-              <a-button type="dashed" @click="addProcess" block>
-                <template #icon><PlusOutlined /></template>
-                添加工序
-              </a-button>
-            </template>
-          </a-table>
-        </a-form-item>
-      </a-form>
-    </a-modal>
-
-    <!-- 查看详情模态框 -->
-    <a-modal
-      v-model:visible="viewModalVisible"
-      title="工艺路线详情"
-      width="1000px"
-      :footer="null"
-    >
-      <a-descriptions :column="3" bordered>
-        <a-descriptions-item label="路线编码">{{ viewData.routeCode }}</a-descriptions-item>
-        <a-descriptions-item label="路线名称">{{ viewData.routeName }}</a-descriptions-item>
-        <a-descriptions-item label="版本">{{ viewData.version }}</a-descriptions-item>
-        <a-descriptions-item label="适用产品">{{ getProductName(viewData.productId) }}</a-descriptions-item>
-        <a-descriptions-item label="标准工时">{{ viewData.standardTime }}分钟</a-descriptions-item>
-        <a-descriptions-item label="产能">{{ viewData.capacity }}件/小时</a-descriptions-item>
-        <a-descriptions-item label="状态">
-          <a-tag :color="viewData.status === '1' ? 'green' : 'red'">
-            {{ viewData.status === '1' ? '启用' : '禁用' }}
-          </a-tag>
-        </a-descriptions-item>
-        <a-descriptions-item label="创建时间">{{ viewData.createTime }}</a-descriptions-item>
-        <a-descriptions-item label="更新时间">{{ viewData.updateTime }}</a-descriptions-item>
-        <a-descriptions-item label="描述" :span="3">{{ viewData.description || '无' }}</a-descriptions-item>
-      </a-descriptions>
-      
-      <a-divider>工序详情</a-divider>
-      <a-table 
-        :columns="processColumns" 
-        :data-source="viewData.processes || []" 
-        :pagination="false"
-        size="small"
-      />
-    </a-modal>
-  </div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { message } from 'ant-design-vue'
-import {
-  PlusOutlined,
-  SearchOutlined,
-  EditOutlined,
-  EyeOutlined,
-  DeleteOutlined
-} from '@ant-design/icons-vue'
+<script setup lang="ts">
+    import { ref, reactive, onMounted } from 'vue'
+    import { useRouter } from 'vue-router'
+    import { message, Modal } from 'ant-design-vue'
+    import {
+        PlusOutlined, EditOutlined, DeleteOutlined,
+        ExportOutlined, ReloadOutlined
+    } from '@ant-design/icons-vue'
+    import OperationInspConfigModal from '@/components/OperationInspConfigModal.vue'
 
-// 响应式数据
-const loading = ref(false)
-const modalVisible = ref(false)
-const viewModalVisible = ref(false)
-const isEdit = ref(false)
-const formRef = ref()
-const expandedRowKeys = ref([])
+    const router = useRouter()
 
-// 搜索表单
-const searchForm = reactive({
-  routeCode: '',
-  routeName: '',
-  productName: '',
-  status: undefined
-})
-
-// 表单数据
-const formData = reactive({
-  id: '',
-  routeCode: '',
-  routeName: '',
-  productId: undefined,
-  version: '',
-  standardTime: 0,
-  capacity: 0,
-  description: '',
-  status: '1',
-  processes: []
-})
-
-// 工序列定义
-const processColumns = [
-  {
-    title: '序号',
-    dataIndex: 'sequence',
-    key: 'sequence',
-    width: 60,
-    customRender: ({ index }) => index + 1
-  },
-  {
-    title: '工序名称',
-    dataIndex: 'processName',
-    key: 'processName',
-    width: 150
-  },
-  {
-    title: '工作中心',
-    dataIndex: 'workCenter',
-    key: 'workCenter',
-    width: 120
-  },
-  {
-    title: '标准工时(分钟)',
-    dataIndex: 'standardTime',
-    key: 'standardTime',
-    width: 120
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 80
-  }
-]
-
-// 表格列定义
-const columns = [
-  {
-    title: '路线编码',
-    dataIndex: 'routeCode',
-    key: 'routeCode',
-    width: 120,
-    fixed: 'left'
-  },
-  {
-    title: '路线名称',
-    dataIndex: 'routeName',
-    key: 'routeName',
-    width: 150,
-    fixed: 'left'
-  },
-  {
-    title: '适用产品',
-    dataIndex: 'productName',
-    key: 'productName',
-    width: 120,
-    customRender: ({ text, record }) => getProductName(record.productId)
-  },
-  {
-    title: '版本',
-    dataIndex: 'version',
-    key: 'version',
-    width: 80
-  },
-  {
-    title: '标准工时(分钟)',
-    dataIndex: 'standardTime',
-    key: 'standardTime',
-    width: 120,
-    sorter: true
-  },
-  {
-    title: '产能(件/小时)',
-    dataIndex: 'capacity',
-    key: 'capacity',
-    width: 120,
-    sorter: true
-  },
-  {
-    title: '工序数量',
-    dataIndex: 'processCount',
-    key: 'processCount',
-    width: 100,
-    customRender: ({ record }) => record.processes?.length || 0
-  },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    key: 'status',
-    width: 80
-  },
-  {
-    title: '创建时间',
-    dataIndex: 'createTime',
-    key: 'createTime',
-    width: 150
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 200,
-    fixed: 'right'
-  }
-]
-
-// 表格数据
-const dataSource = ref([
-  {
-    id: '1',
-    routeCode: 'PR001',
-    routeName: '电子控制器装配路线',
-    productId: '1',
-    version: 'V1.0',
-    standardTime: 120,
-    capacity: 50,
-    description: '电子控制器标准装配工艺路线',
-    status: '1',
-    createTime: '2024-01-15 10:30:00',
-    updateTime: '2024-01-15 10:30:00',
-    processes: [
-      { sequence: 1, processName: 'PCB贴片', workCenter: 'WC001', standardTime: 30 },
-      { sequence: 2, processName: '元件焊接', workCenter: 'WC001', standardTime: 45 },
-      { sequence: 3, processName: '功能测试', workCenter: 'WC002', standardTime: 25 },
-      { sequence: 4, processName: '外壳组装', workCenter: 'WC001', standardTime: 15 },
-      { sequence: 5, processName: '最终测试', workCenter: 'WC002', standardTime: 5 }
-    ]
-  },
-  {
-    id: '2',
-    routeCode: 'PR002',
-    routeName: '电路板组件生产线',
-    productId: '2',
-    version: 'V2.1',
-    standardTime: 90,
-    capacity: 80,
-    description: '电路板组件生产工艺路线',
-    status: '1',
-    createTime: '2024-01-15 10:35:00',
-    updateTime: '2024-01-15 10:35:00',
-    processes: [
-      { sequence: 1, processName: '基板准备', workCenter: 'WC001', standardTime: 10 },
-      { sequence: 2, processName: 'SMT贴片', workCenter: 'WC001', standardTime: 40 },
-      { sequence: 3, processName: '回流焊接', workCenter: 'WC001', standardTime: 20 },
-      { sequence: 4, processName: 'AOI检测', workCenter: 'WC002', standardTime: 15 },
-      { sequence: 5, processName: '功能测试', workCenter: 'WC002', standardTime: 5 }
-    ]
-  },
-  {
-    id: '3',
-    routeCode: 'PR003',
-    routeName: '机械外壳加工路线',
-    productId: '3',
-    version: 'V1.5',
-    standardTime: 180,
-    capacity: 30,
-    description: '机械外壳加工工艺路线',
-    status: '1',
-    createTime: '2024-01-15 10:40:00',
-    updateTime: '2024-01-15 10:40:00',
-    processes: [
-      { sequence: 1, processName: '材料切割', workCenter: 'WC001', standardTime: 30 },
-      { sequence: 2, processName: 'CNC加工', workCenter: 'WC001', standardTime: 80 },
-      { sequence: 3, processName: '表面处理', workCenter: 'WC001', standardTime: 40 },
-      { sequence: 4, processName: '质量检验', workCenter: 'WC002', standardTime: 20 },
-      { sequence: 5, processName: '包装入库', workCenter: 'WC003', standardTime: 10 }
-    ]
-  }
-])
-
-// 分页配置
-const pagination = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 3,
-  showSizeChanger: true,
-  showQuickJumper: true,
-  showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-})
-
-// 查看数据
-const viewData = ref({})
-
-// 表单验证规则
-const rules = {
-  routeCode: [
-    { required: true, message: '请输入路线编码', trigger: 'blur' }
-  ],
-  routeName: [
-    { required: true, message: '请输入路线名称', trigger: 'blur' }
-  ],
-  productId: [
-    { required: true, message: '请选择适用产品', trigger: 'change' }
-  ],
-  version: [
-    { required: true, message: '请输入版本号', trigger: 'blur' }
-  ]
-}
-
-// 工具方法
-const getProductName = (productId) => {
-  const productMap = {
-    '1': '电子控制器',
-    '2': '电路板组件',
-    '3': '机械外壳',
-    '4': '传感器模块'
-  }
-  return productMap[productId] || '未知'
-}
-
-// 展开行渲染
-const expandedRowRender = (record) => {
-  return h('div', { style: { margin: 0 } }, [
-    h('h4', { style: { marginBottom: '8px' } }, '工序列表'),
-    h('a-table', {
-      columns: processColumns,
-      dataSource: record.processes || [],
-      pagination: false,
-      size: 'small',
-      showHeader: true
+    // --- Search & Table ---
+    const loading = ref(false)
+    const tableData = ref < any[] > ([])
+    const selectedRowKeys = ref < string[] > ([])
+    const queryParam = reactive({
+        code: '',
+        name: '',
+        material: ''
     })
-  ])
-}
 
-// 计算属性
-const modalTitle = computed(() => isEdit.value ? '编辑工艺路线' : '新增工艺路线')
+    const pagination = reactive({
+        current: 1,
+        pageSize: 20,
+        total: 0,
+        showSizeChanger: true,
+        showQuickJumper: true
+    })
 
-// 方法
-const handleSearch = () => {
-  pagination.current = 1
-  fetchData()
-}
+    const columns = [
+        { title: '路线编码', dataIndex: 'code', key: 'code', width: 150 },
+        { title: '路线名称', dataIndex: 'name', key: 'name', width: 200 },
+        { title: '关联物料', dataIndex: 'material', key: 'material', width: 150 },
+        { title: '版本', dataIndex: 'version', key: 'version', width: 100 },
+        { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
+        { title: '描述', dataIndex: 'description', key: 'description' },
+        { title: '操作', key: 'action', width: 150, fixed: 'right' }
+    ]
 
-const resetSearch = () => {
-  Object.assign(searchForm, {
-    routeCode: '',
-    routeName: '',
-    productName: '',
-    status: undefined
-  })
-  handleSearch()
-}
+    const innerColumns = [
+        { title: '序号', dataIndex: 'opSeq', key: 'opSeq', width: 60 },
+        { title: '工序名称', dataIndex: 'opName', key: 'opName', width: 120 },
+        { title: '工作中心', dataIndex: 'workCenter', key: 'workCenter', width: 100 },
+        { title: '检验配置', key: 'inspConfig', width: 180 },
+        { title: '工序描述', dataIndex: 'description', key: 'description' }
+    ]
 
-const handleTableChange = (pag, filters, sorter) => {
-  pagination.current = pag.current
-  pagination.pageSize = pag.pageSize
-  fetchData()
-}
+    // 物料下拉选项
+    const materialOptions = ref([
+        { id: '1', code: 'M001', name: '铝锭' },
+        { id: '2', code: 'P001', name: '发动机壳体' },
+        { id: '3', code: 'F001', name: '电动车电机' },
+    ])
 
-const onExpandedRowsChange = (keys) => {
-  expandedRowKeys.value = keys
-}
+    const filterMaterialOption = (input: string, option: any) => {
+        const m = materialOptions.value.find(p => p.id === option.value)
+        if (!m) return false
+        return m.code.toLowerCase().includes(input.toLowerCase()) ||
+            m.name.toLowerCase().includes(input.toLowerCase())
+    }
 
-const showAddModal = () => {
-  isEdit.value = false
-  modalVisible.value = true
-  resetForm()
-}
+    const loadData = () => {
+        loading.value = true
+        setTimeout(() => {
+            // Mock data
+            let data = [
+                {
+                    id: '1', code: 'PR-001', name: '壳体加工工艺', materialId: '2', version: 'V1.0', status: 'Active', description: '压铸机加工',
+                    steps: [
+                        { id: 101, opSeq: 10, opName: '熔炼', workCenter: 'WC-01', description: '铝液熔炼', hasFirstInsp: true, hasPatrolInsp: true, hasFinalInsp: false },
+                        { id: 102, opSeq: 20, opName: '压铸', workCenter: 'WC-02', description: '高压压铸', hasFirstInsp: true, hasPatrolInsp: true, hasFinalInsp: false },
+                        { id: 103, opSeq: 30, opName: '去毛刺', workCenter: 'WC-03', description: '人工去毛刺', hasFirstInsp: false, hasPatrolInsp: false, hasFinalInsp: true },
+                    ]
+                },
+                {
+                    id: '2', code: 'PR-002', name: '电机组装工艺', materialId: '3', version: 'V1.0', status: 'Draft', description: '',
+                    steps: [
+                        { id: 201, opSeq: 10, opName: '绕线', workCenter: 'WC-10', description: '', hasFirstInsp: true, hasPatrolInsp: false, hasFinalInsp: false },
+                        { id: 202, opSeq: 20, opName: '总装', workCenter: 'WC-11', description: '', hasFirstInsp: false, hasPatrolInsp: true, hasFinalInsp: true },
+                    ]
+                }
+            ]
 
-const handleEdit = (record) => {
-  isEdit.value = true
-  modalVisible.value = true
-  Object.assign(formData, {
-    ...record,
-    processes: [...(record.processes || [])]
-  })
-}
+            // Filter
+            if (queryParam.code) data = data.filter(i => i.code.includes(queryParam.code))
+            if (queryParam.name) data = data.filter(i => i.name.includes(queryParam.name))
 
-const handleView = (record) => {
-  viewData.value = record
-  viewModalVisible.value = true
-}
+            tableData.value = data
+            pagination.total = data.length
+            loading.value = false
+        }, 300)
+    }
 
-const handleDelete = (id) => {
-  // 模拟删除操作
-  const index = dataSource.value.findIndex(item => item.id === id)
-  if (index > -1) {
-    dataSource.value.splice(index, 1)
-    message.success('删除成功')
-    fetchData()
-  }
-}
+    const handleSearch = () => {
+        pagination.current = 1
+        loadData()
+    }
 
-const addProcess = () => {
-  const newProcess = {
-    sequence: formData.processes.length + 1,
-    processName: '',
-    workCenter: undefined,
-    standardTime: 0
-  }
-  formData.processes.push(newProcess)
-}
+    const handleReset = () => {
+        queryParam.code = ''
+        queryParam.name = ''
+        queryParam.material = ''
+        handleSearch()
+    }
 
-const removeProcess = (index) => {
-  formData.processes.splice(index, 1)
-  // 重新排序
-  formData.processes.forEach((process, idx) => {
-    process.sequence = idx + 1
-  })
-}
+    const handleTableChange = (pag: any) => {
+        pagination.current = pag.current
+        pagination.pageSize = pag.pageSize
+        loadData()
+    }
 
-const handleSubmit = async () => {
-  try {
-    await formRef.value.validate()
-    
-    if (isEdit.value) {
-      // 编辑操作
-      const index = dataSource.value.findIndex(item => item.id === formData.id)
-      if (index > -1) {
-        dataSource.value[index] = {
-          ...formData,
-          updateTime: new Date().toLocaleString()
+    const onSelectChange = (keys: string[]) => {
+        selectedRowKeys.value = keys
+    }
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Active': return 'green'
+            case 'Draft': return 'orange'
+            case 'Obsolete': return 'default'
+            default: return 'blue'
         }
-        message.success('更新成功')
-      }
-    } else {
-      // 新增操作
-      const newId = (Math.max(...dataSource.value.map(item => parseInt(item.id))) + 1).toString()
-      const newItem = {
-        ...formData,
-        id: newId,
-        createTime: new Date().toLocaleString(),
-        updateTime: new Date().toLocaleString()
-      }
-      dataSource.value.push(newItem)
-      message.success('新增成功')
     }
-    
-    modalVisible.value = false
-    fetchData()
-  } catch (error) {
-    console.error('表单验证失败:', error)
-  }
-}
 
-const handleCancel = () => {
-  modalVisible.value = false
-  resetForm()
-}
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'Active': return '生效'
+            case 'Draft': return '草稿'
+            case 'Obsolete': return '失效'
+            default: return status
+        }
+    }
 
-const resetForm = () => {
-  Object.assign(formData, {
-    id: '',
-    routeCode: '',
-    routeName: '',
-    productId: undefined,
-    version: '',
-    standardTime: 0,
-    capacity: 0,
-    description: '',
-    status: '1',
-    processes: []
-  })
-  formRef.value?.resetFields()
-}
+    // --- Actions ---
+    const modalVisible = ref(false)
+    const isEdit = ref(false)
+    const activeTab = ref('basic')
+    const formRef = ref()
+    const formState = reactive({
+        id: null,
+        code: '',
+        name: '',
+        materialId: undefined as string | undefined,
+        version: 'V1.0',
+        status: 'Draft',
+        description: '',
+        steps: [] as any[]
+    })
 
-const fetchData = () => {
-  loading.value = true
-  // 模拟API调用
-  setTimeout(() => {
-    // 这里可以根据搜索条件过滤数据
-    let filteredData = [...dataSource.value]
-    
-    if (searchForm.routeCode) {
-      filteredData = filteredData.filter(item => 
-        item.routeCode.includes(searchForm.routeCode)
-      )
+    const rules = {
+        code: [{ required: true, message: '请输入路线编码', trigger: 'blur' }],
+        name: [{ required: true, message: '请输入路线名称', trigger: 'blur' }],
+        materialId: [{ required: true, message: '请选择关联物料', trigger: 'change' }]
     }
-    
-    if (searchForm.routeName) {
-      filteredData = filteredData.filter(item => 
-        item.routeName.includes(searchForm.routeName)
-      )
-    }
-    
-    if (searchForm.productName) {
-      filteredData = filteredData.filter(item => 
-        getProductName(item.productId).includes(searchForm.productName)
-      )
-    }
-    
-    if (searchForm.status !== undefined) {
-      filteredData = filteredData.filter(item => item.status === searchForm.status)
-    }
-    
-    pagination.total = filteredData.length
-    loading.value = false
-  }, 500)
-}
 
-// 生命周期
-onMounted(() => {
-  fetchData()
-})
+    const editStepColumns = [
+        { title: '序号', dataIndex: 'opSeq', key: 'opSeq', width: 80 },
+        { title: '工序名称', dataIndex: 'opName', key: 'opName', width: 150 },
+        { title: '工作中心', dataIndex: 'workCenter', key: 'workCenter', width: 120 },
+        { title: '检验配置', key: 'inspConfig', width: 180 },
+        { title: '工序描述', dataIndex: 'description', key: 'description' },
+        { title: '操作', key: 'action', width: 80 }
+    ]
+
+    const handleAdd = () => {
+        isEdit.value = false
+        activeTab.value = 'basic'
+        Object.assign(formState, { id: null, code: '', name: '', material: '', version: 'V1.0', status: 'Draft', description: '', steps: [] })
+        modalVisible.value = true
+    }
+
+    const handleEdit = (record: any) => {
+        const item = record.id ? record : tableData.value.find(i => i.id === selectedRowKeys.value[0])
+        if (!item) return
+
+        isEdit.value = true
+        activeTab.value = 'basic'
+        // Deep copy for steps
+        Object.assign(formState, { ...item, steps: item.steps.map((s: any) => ({ ...s })) })
+        modalVisible.value = true
+    }
+
+    // 跳转到查看页面
+    const handleView = (record: any) => {
+        router.push(`/basic-data/process-route/view/${record.id}`)
+    }
+
+    // 跳转到编辑页面
+    const handleEditPage = (record: any) => {
+        router.push(`/basic-data/process-route/edit/${record.id}`)
+    }
+
+    const handleDelete = (record: any) => {
+        Modal.confirm({
+            title: '确认删除',
+            content: `确定删除工艺路线 ${record.name} 吗？`,
+            okType: 'danger',
+            onOk() {
+                tableData.value = tableData.value.filter(i => i.id !== record.id)
+                message.success('删除成功')
+            }
+        })
+    }
+
+    const handleBatchDelete = () => {
+        Modal.confirm({
+            title: '确认批量删除',
+            content: `确定删除选中的 ${selectedRowKeys.value.length} 条记录吗？`,
+            okType: 'danger',
+            onOk() {
+                tableData.value = tableData.value.filter(i => !selectedRowKeys.value.includes(i.id))
+                selectedRowKeys.value = []
+                message.success('删除成功')
+            }
+        })
+    }
+
+    const handleSave = () => {
+        formRef.value.validate().then(() => {
+            if (isEdit.value) {
+                const idx = tableData.value.findIndex(i => i.id === formState.id)
+                if (idx > -1) Object.assign(tableData.value[idx], { ...formState, steps: [...formState.steps] })
+            } else {
+                tableData.value.push({ ...formState, steps: [...formState.steps], id: Date.now().toString() })
+            }
+            message.success('保存成功')
+            modalVisible.value = false
+            loadData()
+        })
+    }
+
+    const handleExport = () => {
+        message.success('导出任务已开始')
+    }
+
+    // --- Step Actions ---
+    const handleAddStep = () => {
+        formState.steps.push({
+            id: Date.now(),
+            opSeq: (formState.steps.length + 1) * 10,
+            opName: '',
+            workCenter: '',
+            description: ''
+        })
+    }
+
+    const handleRemoveStep = (index: number) => {
+        formState.steps.splice(index, 1)
+    }
+
+    // --- 工序检验配置 ---
+    const inspConfigModalVisible = ref(false)
+    const currentOperation = reactive({ id: '', opSeq: 0, opName: '', routeId: '' })
+
+    const handleConfigInsp = (record: any) => {
+        Object.assign(currentOperation, {
+            id: String(record.id),
+            opSeq: record.opSeq,
+            opName: record.opName,
+            routeId: formState.id || ''
+        })
+        inspConfigModalVisible.value = true
+    }
+
+    const handleSaveInspConfig = (data: any) => {
+        // 更新工序的检验配置状态
+        const step = formState.steps.find(s => String(s.id) === data.operationId)
+        if (step) {
+            step.hasFirstInsp = data.firstInspPlans.length > 0
+            step.hasPatrolInsp = data.patrolInspPlans.length > 0
+            step.hasFinalInsp = data.finalInspPlans.length > 0
+        }
+    }
+
+    onMounted(() => {
+        loadData()
+    })
 </script>
 
 <style scoped>
-.process-route {
-  padding: 24px;
-  background: #fff;
-  border-radius: 8px;
-}
+    .page-container {
+        padding: 24px;
+        background: #f0f2f5;
+        min-height: calc(100vh - 64px);
+    }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
+    .toolbar {
+        background: #fff;
+        padding: 16px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+    }
 
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #262626;
-}
+    .search-card {
+        margin-bottom: 16px;
+    }
 
-.search-form {
-  background: #fafafa;
-  padding: 16px;
-  border-radius: 6px;
-  margin-bottom: 16px;
-}
-
-.table-container {
-  margin-top: 16px;
-}
-
-:deep(.ant-table-tbody > tr:hover > td) {
-  background: #f5f5f5;
-}
-
-:deep(.ant-table-expanded-row) {
-  background: #fafafa;
-}
+    .table-container {
+        background: #fff;
+        padding: 16px;
+        border-radius: 4px;
+    }
 </style>

@@ -1,190 +1,424 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <div class="header-left">
-        <a-button type="text" @click="handleBack" class="back-button">
-          <template #icon><ArrowLeftOutlined /></template>
-          返回
-        </a-button>
-        <div class="title-section">
-          <h2 class="page-title">{{ pageTitle }}</h2>
+    <div class="page-container">
+        <!-- 页面头部 -->
+        <div class="page-header">
+            <div class="header-left">
+                <a-button type="text" @click="handleBack" class="back-button">
+                    <template #icon>
+                        <ArrowLeftOutlined />
+                    </template>
+                    返回
+                </a-button>
+                <div class="title-section">
+                    <h2 class="page-title">{{ pageTitle }}</h2>
+                    <a-tag v-if="form.samplingMethod" :color="getMethodColor(form.samplingMethod)">
+                        {{ getMethodText(form.samplingMethod) }}
+                    </a-tag>
+                </div>
+            </div>
+            <div class="header-actions" v-if="!isView">
+                <a-button type="primary" @click="handleSave" :loading="saving">保存</a-button>
+            </div>
         </div>
-      </div>
-      <div class="header-actions">
-        <a-button type="primary" @click="handleSave" :loading="saving" v-if="!isView">保存</a-button>
-      </div>
-    </div>
 
-    <a-card size="small" class="form-card">
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-row :gutter="16">
-          <a-col :span="8">
-            <a-form-item label="方案代码" name="planCode">
-              <a-input v-model:value="form.planCode" :disabled="isView" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item label="方案名称" name="planName">
-              <a-input v-model:value="form.planName" :disabled="isView" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="8">
-            <a-form-item label="抽样方法" name="samplingMethod">
-              <a-select v-model:value="form.samplingMethod" :disabled="isView" :options="samplingMethodOptions" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="引用标准" name="standard">
-              <a-input v-model:value="form.standard" :disabled="isView" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="描述" name="description">
-              <a-input v-model:value="form.description" :disabled="isView" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-tabs v-model:activeKey="activeTab">
-          <a-tab-pane key="rules" tab="抽样规则">
-            <a-button type="dashed" size="small" style="margin-bottom:8px" @click="addRule" v-if="!isView">新增规则</a-button>
-            <a-table :columns="ruleColumns" :data-source="rulesData" row-key="id" size="small" />
-          </a-tab-pane>
-          <a-tab-pane key="details" tab="抽样明细">
-            <a-button type="dashed" size="small" style="margin-bottom:8px" @click="addDetail" v-if="!isView">新增明细</a-button>
-            <a-table :columns="detailColumns" :data-source="detailsData" row-key="id" size="small" />
-          </a-tab-pane>
-        </a-tabs>
-        <a-space>
-          <a-button @click="handleBack">返回列表</a-button>
-        </a-space>
-      </a-form>
-    </a-card>
-  </div>
+        <!-- 基本信息 -->
+        <a-card class="form-card" title="基本信息">
+            <a-form ref="formRef" :model="form" :rules="rules" layout="horizontal" :label-col="{ span: 6 }"
+                :wrapper-col="{ span: 16 }">
+                <a-row :gutter="24">
+                    <a-col :span="8">
+                        <a-form-item label="方案代码" name="planCode">
+                            <a-input v-model:value="form.planCode" :disabled="isView || isEdit" placeholder="请输入" />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="8">
+                        <a-form-item label="方案名称" name="planName">
+                            <a-input v-model:value="form.planName" :disabled="isView" placeholder="请输入" />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="8">
+                        <a-form-item label="抽样方法" name="samplingMethod">
+                            <a-select v-model:value="form.samplingMethod" :disabled="isView" placeholder="请选择">
+                                <a-select-option value="STANDARD_BASED">国标/标准</a-select-option>
+                                <a-select-option value="FIXED_QUANTITY">固定数量</a-select-option>
+                                <a-select-option value="PERCENTAGE">百分比</a-select-option>
+                                <a-select-option value="FULL_INSPECTION">全检</a-select-option>
+                            </a-select>
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+                <a-row :gutter="24">
+                    <a-col :span="8">
+                        <a-form-item label="适用标准" name="standard">
+                            <a-input v-model:value="form.standard" :disabled="isView" placeholder="如: GB/T 2828.1" />
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+                <a-row :gutter="24">
+                    <a-col :span="16">
+                        <a-form-item label="描述" name="description" :label-col="{ span: 3 }" :wrapper-col="{ span: 20 }">
+                            <a-textarea v-model:value="form.description" :disabled="isView" :rows="2"
+                                placeholder="请输入描述" />
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+            </a-form>
+        </a-card>
+
+        <!-- Tab页签 -->
+        <a-card class="tab-card">
+            <a-tabs v-model:activeKey="activeTab">
+                <!-- 抽样规则Tab -->
+                <a-tab-pane key="rules" tab="抽样规则">
+                    <div class="tab-toolbar" v-if="!isView">
+                        <a-button type="primary" size="small" @click="handleAddRule">
+                            <PlusOutlined /> 添加规则
+                        </a-button>
+                    </div>
+                    <a-table :columns="ruleColumns" :data-source="form.rules" row-key="id" size="small"
+                        :pagination="false">
+                        <template #bodyCell="{ column, record, index }">
+                            <template v-if="column.key === 'inspectionLevel'">
+                                <a-tag color="blue">{{ record.inspectionLevel }}</a-tag>
+                            </template>
+                            <template v-else-if="column.key === 'inspectionType'">
+                                <a-tag :color="getInspTypeColor(record.inspectionType)">
+                                    {{ getInspTypeText(record.inspectionType) }}
+                                </a-tag>
+                            </template>
+                            <template v-else-if="column.key === 'action'">
+                                <a-space>
+                                    <a-button type="link" size="small" @click="handleEditRule(record)">编辑</a-button>
+                                    <a-button v-if="!isView" type="link" danger size="small"
+                                        @click="handleRemoveRule(index)">删除</a-button>
+                                </a-space>
+                            </template>
+                        </template>
+                        <!-- 嵌套子表格：抽样明细 -->
+                        <template #expandedRowRender="{ record }">
+                            <div class="detail-table-wrapper">
+                                <div class="detail-header">抽样明细 ({{ record.ruleCode }})</div>
+                                <a-table :columns="detailColumns" :data-source="record.details" row-key="id"
+                                    size="small" :pagination="false" bordered />
+                            </div>
+                        </template>
+                    </a-table>
+                    <a-empty v-if="form.rules.length === 0" description="暂无抽样规则，请添加" />
+                </a-tab-pane>
+            </a-tabs>
+        </a-card>
+
+        <!-- 规则编辑弹窗 -->
+        <a-modal v-model:visible="ruleModalVisible" :title="isEditRule ? '编辑规则' : '新增规则'" width="700px" @ok="saveRule">
+            <a-form layout="vertical" :model="ruleForm">
+                <a-row :gutter="16">
+                    <a-col :span="12">
+                        <a-form-item label="规则代码" required>
+                            <a-input v-model:value="ruleForm.ruleCode" />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                        <a-form-item label="规则名称" required>
+                            <a-input v-model:value="ruleForm.ruleName" />
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                    <a-col :span="8">
+                        <a-form-item label="检验水平">
+                            <a-select v-model:value="ruleForm.inspectionLevel">
+                                <a-select-option value="I">I</a-select-option>
+                                <a-select-option value="II">II</a-select-option>
+                                <a-select-option value="III">III</a-select-option>
+                                <a-select-option value="S1">S1</a-select-option>
+                                <a-select-option value="S2">S2</a-select-option>
+                            </a-select>
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="8">
+                        <a-form-item label="检验类型">
+                            <a-select v-model:value="ruleForm.inspectionType">
+                                <a-select-option value="NORMAL">正常检验</a-select-option>
+                                <a-select-option value="STRICT">加严检验</a-select-option>
+                                <a-select-option value="REDUCED">放宽检验</a-select-option>
+                            </a-select>
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="8">
+                        <a-form-item label="AQL值">
+                            <a-input-number v-model:value="ruleForm.aqlValue" :min="0" :step="0.1"
+                                style="width: 100%" />
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+            </a-form>
+        </a-modal>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted, h, resolveComponent } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import { ArrowLeftOutlined } from '@ant-design/icons-vue'
+    import { ref, reactive, computed, onMounted } from 'vue'
+    import { useRoute, useRouter } from 'vue-router'
+    import { message } from 'ant-design-vue'
+    import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons-vue'
 
-const router = useRouter()
-const route = useRoute()
+    const router = useRouter()
+    const route = useRoute()
 
-const formRef = ref()
-const saving = ref(false)
-const isView = computed(() => route.path.includes('/view/'))
-const pageTitle = computed(() => {
-  if (isView.value) return '抽样方案-查看'
-  return route.params.id ? '抽样方案-编辑' : '抽样方案-新增'
-})
+    // --- 页面状态 ---
+    const formRef = ref()
+    const saving = ref(false)
+    const activeTab = ref('rules')
 
-const samplingMethodOptions = [
-  { value: 'FIXED_QUANTITY', label: '固定数量' },
-  { value: 'PERCENTAGE', label: '百分比' },
-  { value: 'STANDARD_BASED', label: '国标/标准' },
-  { value: 'FULL_INSPECTION', label: '全检' }
-]
+    const isView = computed(() => route.path.includes('/view/'))
+    const isEdit = computed(() => route.path.includes('/edit/'))
+    const pageTitle = computed(() => {
+        if (isView.value) return '查看抽样方案'
+        return isEdit.value ? '编辑抽样方案' : '新增抽样方案'
+    })
 
-const form = reactive({
-  planCode: '',
-  planName: '',
-  samplingMethod: undefined as any,
-  standard: '',
-  description: ''
-})
+    // --- 基本信息表单 ---
+    const form = reactive({
+        id: null as string | null,
+        planCode: '',
+        planName: '',
+        samplingMethod: 'STANDARD_BASED' as string,
+        standard: '',
+        description: '',
+        rules: [] as any[]
+    })
 
-const rules: any = {
-  planCode: [{ required: true, message: '请输入方案代码', trigger: 'blur' }],
-  planName: [{ required: true, message: '请输入方案名称', trigger: 'blur' }],
-  samplingMethod: [{ required: true, message: '请选择抽样方法', trigger: 'change' }]
-}
+    const rules = {
+        planCode: [{ required: true, message: '请输入方案代码', trigger: 'blur' }],
+        planName: [{ required: true, message: '请输入方案名称', trigger: 'blur' }],
+        samplingMethod: [{ required: true, message: '请选择抽样方法', trigger: 'change' }]
+    }
 
-const activeTab = ref('rules')
+    const getMethodColor = (method: string) => {
+        const map: Record<string, string> = {
+            STANDARD_BASED: 'blue', FIXED_QUANTITY: 'cyan',
+            PERCENTAGE: 'orange', FULL_INSPECTION: 'green'
+        }
+        return map[method] || 'default'
+    }
+    const getMethodText = (method: string) => {
+        const map: Record<string, string> = {
+            STANDARD_BASED: '国标', FIXED_QUANTITY: '固定数量',
+            PERCENTAGE: '百分比', FULL_INSPECTION: '全检'
+        }
+        return map[method] || method
+    }
 
-const rulesData = ref<any[]>([])
-const detailsData = ref<any[]>([])
+    // --- 抽样规则Tab ---
+    const ruleColumns = [
+        { title: '规则代码', dataIndex: 'ruleCode', key: 'ruleCode', width: 150 },
+        { title: '规则名称', dataIndex: 'ruleName', key: 'ruleName', width: 200 },
+        { title: '检验水平', key: 'inspectionLevel', width: 100 },
+        { title: '检验类型', key: 'inspectionType', width: 120 },
+        { title: 'AQL值', dataIndex: 'aqlValue', key: 'aqlValue', width: 80 },
+        { title: '操作', key: 'action', width: 150 }
+    ]
 
-const ruleColumns = [
-  { title: '规则代码', dataIndex: 'ruleCode', key: 'ruleCode' },
-  { title: '规则名称', dataIndex: 'ruleName', key: 'ruleName' },
-  { title: '检验水平', dataIndex: 'inspectionLevel', key: 'inspectionLevel' },
-  { title: '严格类型', dataIndex: 'inspectionType', key: 'inspectionType' },
-  { title: 'AQL', dataIndex: 'aqlValue', key: 'aqlValue' },
-  { title: '样本量', dataIndex: 'sampleSize', key: 'sampleSize' },
-  { title: '操作', key: 'actions', customRender: ({ record }: any) => {
-    const AButton = resolveComponent('a-button')
-    const ASpace = resolveComponent('a-space')
-    return h(ASpace, null, { default: () => [
-      h(AButton, { size: 'small', type: 'link', disabled: isView.value, onClick: () => removeRule(record.id) }, { default: () => '移除' })
-    ] }) } }
-]
+    const detailColumns = [
+        { title: '批量下限', dataIndex: 'batchSizeMin', key: 'batchSizeMin' },
+        { title: '批量上限', dataIndex: 'batchSizeMax', key: 'batchSizeMax' },
+        { title: '样本量字码', dataIndex: 'sampleSizeCode', key: 'sampleSizeCode' },
+        { title: 'Ac(接收)', dataIndex: 'acceptanceNumber', key: 'acceptanceNumber' },
+        { title: 'Re(拒收)', dataIndex: 'rejectionNumber', key: 'rejectionNumber' }
+    ]
 
-const detailColumns = [
-  { title: '批量从', dataIndex: 'batchSizeMin', key: 'batchSizeMin' },
-  { title: '批量至', dataIndex: 'batchSizeMax', key: 'batchSizeMax' },
-  { title: '样本量字码', dataIndex: 'sampleSizeCode', key: 'sampleSizeCode' },
-  { title: '接收数Ac', dataIndex: 'acceptanceNumber', key: 'acceptanceNumber' },
-  { title: '拒收数Re', dataIndex: 'rejectionNumber', key: 'rejectionNumber' },
-  { title: '操作', key: 'actions', customRender: ({ record }: any) => {
-    const AButton = resolveComponent('a-button')
-    const ASpace = resolveComponent('a-space')
-    return h(ASpace, null, { default: () => [
-      h(AButton, { size: 'small', type: 'link', disabled: isView.value, onClick: () => removeDetail(record.id) }, { default: () => '移除' })
-    ] }) } }
-]
+    const getInspTypeColor = (type: string) => {
+        switch (type) {
+            case 'NORMAL': return 'green'
+            case 'STRICT': return 'red'
+            case 'REDUCED': return 'orange'
+            default: return 'default'
+        }
+    }
+    const getInspTypeText = (type: string) => {
+        const map: Record<string, string> = { NORMAL: '正常', STRICT: '加严', REDUCED: '放宽' }
+        return map[type] || type
+    }
 
-const addRule = () => {
-  const id = Date.now()
-  rulesData.value.push({ id, ruleCode: `RULE-${id}`, ruleName: 'II级正常单次AQL=0.65', inspectionLevel: 'II', inspectionType: 'NORMAL', aqlValue: 0.65, sampleSize: 20 })
-}
-const removeRule = (id: number) => {
-  rulesData.value = rulesData.value.filter(r => r.id !== id)
-}
-const addDetail = () => {
-  const id = Date.now()
-  detailsData.value.push({ id, batchSizeMin: 91, batchSizeMax: 150, sampleSizeCode: 'G', acceptanceNumber: 0, rejectionNumber: 1 })
-}
-const removeDetail = (id: number) => {
-  detailsData.value = detailsData.value.filter(r => r.id !== id)
-}
+    // --- 规则编辑弹窗 ---
+    const ruleModalVisible = ref(false)
+    const isEditRule = ref(false)
+    const ruleForm = reactive({
+        id: null as string | null,
+        ruleCode: '',
+        ruleName: '',
+        inspectionLevel: 'II',
+        inspectionType: 'NORMAL',
+        aqlValue: 1.0,
+        details: [] as any[]
+    })
 
-const handleBack = () => {
-  router.push('/inspection-model/sampling-plans')
-}
+    const handleAddRule = () => {
+        isEditRule.value = false
+        Object.assign(ruleForm, {
+            id: null, ruleCode: '', ruleName: '',
+            inspectionLevel: 'II', inspectionType: 'NORMAL', aqlValue: 1.0, details: []
+        })
+        ruleModalVisible.value = true
+    }
 
-const handleSave = async () => {
-  try {
-    saving.value = true
-    await formRef.value?.validate()
-    message.success('保存成功')
-    router.push('/inspection-model/sampling-plans')
-  } catch (e) {
-    message.error('请完善必填项')
-  } finally {
-    saving.value = false
-  }
-}
+    const handleEditRule = (record: any) => {
+        isEditRule.value = true
+        Object.assign(ruleForm, { ...record, details: [...(record.details || [])] })
+        ruleModalVisible.value = true
+    }
 
-onMounted(() => {
-  const id = route.params.id as string | undefined
-  if (id) {
-    Object.assign(form, { planCode: 'AQL-GB2828', planName: 'GB/T 2828.1-2012 AQL抽样', samplingMethod: 'STANDARD_BASED', standard: 'GB/T 2828.1-2012', description: '公司所有AQL抽样的集合' })
-    rulesData.value = [{ id: 10, ruleCode: 'AQL-GB2828-L2-N-0.65', ruleName: 'II级正常单次AQL=0.65', inspectionLevel: 'II', inspectionType: 'NORMAL', aqlValue: 0.65, sampleSize: 20 }]
-    detailsData.value = [{ id: 101, batchSizeMin: 91, batchSizeMax: 150, sampleSizeCode: 'G', acceptanceNumber: 0, rejectionNumber: 1 }]
-  }
-})
+    const saveRule = () => {
+        if (!ruleForm.ruleCode || !ruleForm.ruleName) {
+            message.error('请填写必填项')
+            return
+        }
+        if (isEditRule.value) {
+            const idx = form.rules.findIndex(r => r.id === ruleForm.id)
+            if (idx !== -1) Object.assign(form.rules[idx], { ...ruleForm, details: [...ruleForm.details] })
+        } else {
+            form.rules.push({ ...ruleForm, id: Date.now().toString(), details: [] })
+        }
+        ruleModalVisible.value = false
+        message.success(isEditRule.value ? '规则已更新' : '规则已添加')
+    }
+
+    const handleRemoveRule = (index: number) => {
+        form.rules.splice(index, 1)
+    }
+
+    // --- 页面操作 ---
+    const handleBack = () => {
+        router.push('/inspection-model/sampling-plans')
+    }
+
+    const handleSave = async () => {
+        try {
+            saving.value = true
+            await formRef.value?.validate()
+            message.success('保存成功')
+            router.push('/inspection-model/sampling-plans')
+        } catch (e) {
+            message.error('请完善必填项')
+        } finally {
+            saving.value = false
+        }
+    }
+
+    // --- 数据加载 ---
+    const loadData = () => {
+        const id = route.params.id as string | undefined
+        if (id) {
+            const mockItems: Record<string, any> = {
+                '1': {
+                    id: '1', planCode: 'AQL-GB2828', planName: 'GB/T 2828.1-2012',
+                    samplingMethod: 'STANDARD_BASED', standard: 'GB/T 2828.1',
+                    description: '基于国标的AQL抽样',
+                    rules: [
+                        {
+                            id: '101', ruleCode: 'GB-L2-N-0.65', ruleName: 'Level II 正常 AQL 0.65',
+                            inspectionLevel: 'II', inspectionType: 'NORMAL', aqlValue: 0.65,
+                            details: [
+                                { id: 1, batchSizeMin: 1, batchSizeMax: 8, sampleSizeCode: 'A', acceptanceNumber: 0, rejectionNumber: 1 },
+                                { id: 2, batchSizeMin: 9, batchSizeMax: 15, sampleSizeCode: 'B', acceptanceNumber: 0, rejectionNumber: 1 },
+                                { id: 3, batchSizeMin: 16, batchSizeMax: 25, sampleSizeCode: 'C', acceptanceNumber: 0, rejectionNumber: 1 }
+                            ]
+                        },
+                        {
+                            id: '102', ruleCode: 'GB-L2-S-0.65', ruleName: 'Level II 加严 AQL 0.65',
+                            inspectionLevel: 'II', inspectionType: 'STRICT', aqlValue: 0.65,
+                            details: [
+                                { id: 4, batchSizeMin: 1, batchSizeMax: 8, sampleSizeCode: 'A', acceptanceNumber: 0, rejectionNumber: 1 }
+                            ]
+                        }
+                    ]
+                },
+                '2': {
+                    id: '2', planCode: 'FIX-QTY', planName: '固定数量抽样',
+                    samplingMethod: 'FIXED_QUANTITY', standard: '内部标准',
+                    description: '不管多少只抽5个',
+                    rules: []
+                },
+                '3': {
+                    id: '3', planCode: 'PERCENT-10', planName: '10%抽样',
+                    samplingMethod: 'PERCENTAGE', standard: '内部标准',
+                    description: '按数量10%抽',
+                    rules: []
+                }
+            }
+            const data = mockItems[id]
+            if (data) {
+                Object.assign(form, data)
+            }
+        }
+    }
+
+    onMounted(() => {
+        loadData()
+    })
 </script>
 
 <style scoped>
-.page-container { padding:24px; background:#f5f5f5; min-height:calc(100vh - 60px) }
-.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px }
-.header-left { display:flex; align-items:center; gap:8px }
-.back-button { padding:0 }
-.page-title { margin:0; font-size:18px; font-weight:600 }
-.form-card :deep(.ant-card-body) { padding:16px }
-@media (max-width:768px){ .page-container{ padding:8px } }
-</style>
+    .page-container {
+        padding: 24px;
+        background: #f0f2f5;
+        min-height: calc(100vh - 64px);
+    }
 
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        background: #fff;
+        padding: 16px;
+        border-radius: 4px;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .back-button {
+        padding: 0;
+    }
+
+    .title-section {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .page-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .form-card {
+        margin-bottom: 16px;
+    }
+
+    .tab-card {
+        margin-bottom: 16px;
+    }
+
+    .tab-toolbar {
+        margin-bottom: 12px;
+    }
+
+    .detail-table-wrapper {
+        background: #fafafa;
+        padding: 12px;
+        border-radius: 4px;
+    }
+
+    .detail-header {
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #595959;
+        font-size: 13px;
+    }
+</style>

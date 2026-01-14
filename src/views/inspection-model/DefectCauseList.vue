@@ -1,129 +1,395 @@
 <template>
-  <div class="page-container">
-    <div class="toolbar">
-      <a-button type="primary" @click="toCreate">新增</a-button>
-      <a-button :disabled="selectedRowKeys.length!==1" @click="toEdit">编辑</a-button>
-      <a-button :disabled="selectedRowKeys.length===0" danger @click="confirmDelete">删除</a-button>
-      <a-button @click="exportCsv">导出</a-button>
-      <a-switch v-model:checked="autoRefresh" checked-children="自动刷新" un-checked-children="自动刷新" />
-      <a-button @click="load">刷新</a-button>
+    <div class="page-container">
+        <div class="split-layout">
+            <!-- Left Panel: Cause Tree -->
+            <div class="left-panel">
+                <div class="panel-header">
+                    <span class="panel-title">不良原因分类</span>
+                    <a-space>
+                        <a-tooltip title="刷新">
+                            <a-button size="small" shape="circle" @click="loadTree">
+                                <template #icon>
+                                    <ReloadOutlined />
+                                </template>
+                            </a-button>
+                        </a-tooltip>
+                    </a-space>
+                </div>
+                <div class="tree-container">
+                    <a-spin :spinning="treeLoading">
+                        <a-tree v-if="treeData.length > 0" v-model:selectedKeys="selectedTreeKeys"
+                            v-model:expandedKeys="expandedKeys" :tree-data="treeData"
+                            :field-names="{ children: 'children', title: 'name', key: 'id' }" block-node
+                            @select="onTreeSelect">
+                            <template #title="{ name }">
+                                <span class="node-title">{{ name }}</span>
+                            </template>
+                        </a-tree>
+                        <a-empty v-else description="暂无分类数据" class="empty-state" />
+                    </a-spin>
+                </div>
+            </div>
+
+            <!-- Right Panel: Cause List -->
+            <div class="right-panel">
+                <div class="right-header">
+                    <div class="header-info">
+                        <div class="category-title">{{ selectedNode ? selectedNode.name : '全部原因' }}</div>
+                    </div>
+                    <div class="header-actions">
+                        <a-button type="primary" @click="handleAdd">
+                            <template #icon>
+                                <PlusOutlined />
+                            </template>
+                            新增原因
+                        </a-button>
+                        <a-button danger :disabled="selectedRowKeys.length === 0" @click="handleBatchDelete">
+                            批量删除
+                        </a-button>
+                    </div>
+                </div>
+
+                <!-- Search Box -->
+                <div class="search-box">
+                    <a-form layout="inline" :model="queryParam">
+                        <a-form-item label="原因代码">
+                            <a-input v-model:value="queryParam.causeCode" placeholder="模糊搜索" allow-clear />
+                        </a-form-item>
+                        <a-form-item label="原因名称">
+                            <a-input v-model:value="queryParam.causeName" placeholder="模糊搜索" allow-clear />
+                        </a-form-item>
+                        <a-form-item>
+                            <a-button type="primary" @click="handleSearch">查询</a-button>
+                            <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
+                        </a-form-item>
+                    </a-form>
+                </div>
+
+                <!-- Table -->
+                <div class="table-container">
+                    <a-table :columns="columns" :data-source="tableData" :loading="tableLoading" row-key="id"
+                        size="middle" :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
+                        :pagination="{ showSizeChanger: true, showQuickJumper: true, showTotal: total => `共 ${total} 条` }">
+                        <template #bodyCell="{ column, record }">
+                            <template v-if="column.key === 'action'">
+                                <a-space>
+                                    <a-button type="link" size="small" @click="handleView(record)">查看</a-button>
+                                    <a-button type="link" size="small" @click="handleEdit(record)">编辑</a-button>
+                                    <a-button type="link" danger size="small"
+                                        @click="handleDelete(record)">删除</a-button>
+                                </a-space>
+                            </template>
+                        </template>
+                    </a-table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <a-modal v-model:visible="modalVisible" :title="isEdit ? '编辑不良原因' : '新增不良原因'" width="600px" @ok="handleSave">
+            <a-tabs v-model:activeKey="activeTab">
+                <a-tab-pane key="basic" tab="基本信息">
+                    <a-form ref="formRef" :model="formState" layout="vertical" :rules="rules">
+                        <a-row :gutter="16">
+                            <a-col :span="12">
+                                <a-form-item label="原因代码" name="causeCode">
+                                    <a-input v-model:value="formState.causeCode" placeholder="请输入" />
+                                </a-form-item>
+                            </a-col>
+                            <a-col :span="12">
+                                <a-form-item label="原因名称" name="causeName">
+                                    <a-input v-model:value="formState.causeName" placeholder="请输入" />
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+                        <a-row :gutter="16">
+                            <a-col :span="12">
+                                <a-form-item label="原因类别" name="causeType">
+                                    <a-select v-model:value="formState.causeType">
+                                        <a-select-option value="Man">人 (Man)</a-select-option>
+                                        <a-select-option value="Machine">机 (Machine)</a-select-option>
+                                        <a-select-option value="Material">料 (Material)</a-select-option>
+                                        <a-select-option value="Method">法 (Method)</a-select-option>
+                                        <a-select-option value="Environment">环 (Environment)</a-select-option>
+                                    </a-select>
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+                        <a-form-item label="描述" name="description">
+                            <a-textarea v-model:value="formState.description" :rows="3" />
+                        </a-form-item>
+                    </a-form>
+                </a-tab-pane>
+                <a-tab-pane key="fmea" tab="FMEA关联">
+                    <a-empty description="FMEA关联功能将在后续阶段实现" />
+                </a-tab-pane>
+            </a-tabs>
+        </a-modal>
     </div>
-    <a-card title="搜索条件" size="small" class="search-card">
-      <a-form layout="inline" :model="query">
-        <a-form-item label="编码"><a-input v-model:value="query.code" style="width:160px" /></a-form-item>
-        <a-form-item label="名称"><a-input v-model:value="query.name" style="width:200px" /></a-form-item>
-        <a-form-item label="原因大类">
-          <a-select v-model:value="query.category" style="width:160px" allowClear>
-            <a-select-option value="Man">Man</a-select-option>
-            <a-select-option value="Machine">Machine</a-select-option>
-            <a-select-option value="Material">Material</a-select-option>
-            <a-select-option value="Method">Method</a-select-option>
-            <a-select-option value="Measurement">Measurement</a-select-option>
-            <a-select-option value="Environment">Environment</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" @click="search">查询</a-button>
-          <a-button style="margin-left:8px" @click="reset">重置</a-button>
-        </a-form-item>
-      </a-form>
-    </a-card>
-    <a-table
-      :columns="columns"
-      :data-source="data"
-      :pagination="pagination"
-      :row-selection="rowSelection"
-      row-key="id"
-      size="small"
-      class="compact-table"
-    />
-  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, h, resolveComponent } from 'vue'
-import { useRouter } from 'vue-router'
-import { Modal, message } from 'ant-design-vue'
+    import { ref, reactive, computed, onMounted } from 'vue'
+    import { useRouter } from 'vue-router'
+    import { message, Modal } from 'ant-design-vue'
+    import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons-vue'
 
-const router = useRouter()
+    const router = useRouter()
 
-const data = ref<any[]>([])
-const query = reactive({ code: '', name: '', category: '' as any })
+    // --- Left Tree ---
+    const treeLoading = ref(false)
+    const treeData = ref < any[] > ([])
+    const selectedTreeKeys = ref < string[] > ([])
+    const expandedKeys = ref < string[] > ([])
 
-const columns = [
-  { title: '原因代码', dataIndex: 'code', key: 'code' },
-  { title: '原因名称', dataIndex: 'name', key: 'name' },
-  { title: '父级ID', dataIndex: 'parentId', key: 'parentId' },
-  { title: '原因大类', dataIndex: 'category', key: 'category' },
-  { title: '高频', dataIndex: 'isHighFrequency', key: 'isHighFrequency', customRender: ({ text }: any) => text ? '是' : '否' },
-  { title: '操作', key: 'actions',
-    customRender: ({ record }: any) => {
-      const ASpace = resolveComponent('a-space')
-      const AButton = resolveComponent('a-button')
-      return h(ASpace, null, {
-        default: () => [
-          h(AButton, { size: 'small', type: 'link', onClick: () => router.push(`/inspection-model/defect-causes/edit/${record.id}`) }, { default: () => '编辑' }),
-          h(AButton, { size: 'small', type: 'link', onClick: () => router.push(`/inspection-model/defect-causes/view/${record.id}`) }, { default: () => '查看' })
-        ]
-      })
+    const selectedNode = computed(() => {
+        if (selectedTreeKeys.value.length === 0) return null
+        const findNode = (list: any[], key: string): any => {
+            for (const item of list) {
+                if (item.id === key) return item
+                if (item.children) {
+                    const found = findNode(item.children, key)
+                    if (found) return found
+                }
+            }
+            return null
+        }
+        return findNode(treeData.value, selectedTreeKeys.value[0])
+    })
+
+    const loadTree = () => {
+        treeLoading.value = true
+        setTimeout(() => {
+            treeData.value = [
+                { id: 'Man', name: '人 (Man)', children: [] },
+                { id: 'Machine', name: '机 (Machine)', children: [] },
+                { id: 'Material', name: '料 (Material)', children: [] },
+                { id: 'Method', name: '法 (Method)', children: [] },
+                { id: 'Environment', name: '环 (Environment)', children: [] },
+            ]
+            treeLoading.value = false
+        }, 300)
     }
-  }
-]
 
-const selectedRowKeys = ref<any[]>([])
-const selectedRows = ref<any[]>([])
-const rowSelection = reactive({
-  selectedRowKeys,
-  onChange: (keys: any[], rows: any[]) => { selectedRowKeys.value = keys; selectedRows.value = rows }
-})
+    const onTreeSelect = (keys: string[]) => {
+        handleSearch()
+    }
 
-const pagination = reactive({ current: 1, pageSize: 20, total: 0, showSizeChanger: true, showQuickJumper: true })
+    // --- List & Search ---
+    const tableLoading = ref(false)
+    const tableData = ref < any[] > ([])
+    const selectedRowKeys = ref < string[] > ([])
+    const queryParam = reactive({
+        causeCode: '',
+        causeName: ''
+    })
 
-const autoRefresh = ref(false)
-let timer: any = null
-watch(autoRefresh, (val) => { if (val) { timer = setInterval(load, 15000) } else { if (timer) { clearInterval(timer); timer=null } } })
+    const columns = [
+        { title: '原因代码', dataIndex: 'causeCode', key: 'causeCode', width: 120 },
+        { title: '原因名称', dataIndex: 'causeName', key: 'causeName', width: 200 },
+        { title: '原因类别', dataIndex: 'causeType', key: 'causeType', width: 120 },
+        { title: '描述', dataIndex: 'description', key: 'description' },
+        { title: '操作', key: 'action', width: 150 }
+    ]
 
-const load = () => {
-  const all = [
-    { id: 500, parentId: null, code: 'CA-MAC', name: '设备问题', category: 'Machine', isHighFrequency: false },
-    { id: 501, parentId: 500, code: 'CA-MAC-AGING', name: '设备老化', category: 'Machine', isHighFrequency: true }
-  ]
-  let res = all
-  if (query.code) res = res.filter(r => r.code.includes(query.code))
-  if (query.name) res = res.filter(r => r.name.includes(query.name))
-  if (query.category) res = res.filter(r => r.category===query.category)
-  pagination.total = res.length
-  data.value = res
-}
+    const handleSearch = () => {
+        tableLoading.value = true
+        setTimeout(() => {
+            // Mock Data
+            let res = [
+                { id: 1, causeCode: 'C-MAN-001', causeName: '操作不当', causeType: 'Man', description: '员工未按SOP操作' },
+                { id: 2, causeCode: 'C-MAC-001', causeName: '设备故障', causeType: 'Machine', description: '主轴跳动过大' },
+                { id: 3, causeCode: 'C-MAT-001', causeName: '原料杂质', causeType: 'Material', description: '供应商来料含杂质' }
+            ]
 
-const search = () => { pagination.current = 1; load() }
-const reset = () => { Object.assign(query, { code: '', name: '', category: '' }); search() }
-const toCreate = () => router.push('/inspection-model/defect-causes/create')
-const toEdit = () => { if (selectedRows.value[0]) router.push(`/inspection-model/defect-causes/edit/${selectedRows.value[0].id}`) }
-const confirmDelete = () => { if (selectedRowKeys.value.length===0) return; Modal.confirm({ title:'确认删除', content:`确定删除选中的${selectedRowKeys.value.length}条记录？`, okType:'danger', onOk(){ message.success('删除成功') } }) }
+            // Filter by Tree Selection
+            if (selectedTreeKeys.value.length > 0) {
+                res = res.filter(item => item.causeType === selectedTreeKeys.value[0])
+            }
 
-const exportCsv = () => {
-  const header = ['原因代码','原因名称','父级ID','原因大类','高频']
-  const rows = data.value.map(r => [r.code, r.name, r.parentId??'', r.category, r.isHighFrequency?'是':'否'])
-  const csv = [header, ...rows].map(r => r.join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = '不良原因.csv'
-  a.click()
-  URL.revokeObjectURL(url)
-}
+            // Filter by Search Query
+            if (queryParam.causeCode) {
+                res = res.filter(item => item.causeCode.toLowerCase().includes(queryParam.causeCode.toLowerCase()))
+            }
+            if (queryParam.causeName) {
+                res = res.filter(item => item.causeName.includes(queryParam.causeName))
+            }
 
-onMounted(load)
+            tableData.value = res
+            tableLoading.value = false
+        }, 300)
+    }
+
+    const handleReset = () => {
+        queryParam.causeCode = ''
+        queryParam.causeName = ''
+        handleSearch()
+    }
+
+    const onSelectChange = (keys: string[]) => {
+        selectedRowKeys.value = keys
+    }
+
+    // --- Edit Modal ---
+    const modalVisible = ref(false)
+    const isEdit = ref(false)
+    const activeTab = ref('basic')
+    const formRef = ref()
+    const formState = reactive({
+        id: null,
+        causeCode: '',
+        causeName: '',
+        causeType: 'Man',
+        description: ''
+    })
+
+    const rules = {
+        causeCode: [{ required: true, message: '请输入原因代码', trigger: 'blur' }],
+        causeName: [{ required: true, message: '请输入原因名称', trigger: 'blur' }],
+        causeType: [{ required: true, message: '请选择原因类别', trigger: 'change' }]
+    }
+
+    const handleAdd = () => {
+        router.push('/inspection-model/defect-causes/create')
+    }
+
+    const handleView = (record: any) => {
+        router.push(`/inspection-model/defect-causes/view/${record.id}`)
+    }
+
+    const handleEdit = (record: any) => {
+        router.push(`/inspection-model/defect-causes/edit/${record.id}`)
+    }
+
+    const handleDelete = (record: any) => {
+        Modal.confirm({
+            title: '确认删除',
+            content: `确定删除原因 ${record.causeName} 吗？`,
+            okType: 'danger',
+            onOk() {
+                tableData.value = tableData.value.filter(item => item.id !== record.id)
+                message.success('删除成功')
+            }
+        })
+    }
+
+    const handleBatchDelete = () => {
+        Modal.confirm({
+            title: '确认删除',
+            content: `确定删除选中的 ${selectedRowKeys.value.length} 条记录吗？`,
+            okType: 'danger',
+            onOk() {
+                tableData.value = tableData.value.filter(item => !selectedRowKeys.value.includes(item.id))
+                selectedRowKeys.value = []
+                message.success('删除成功')
+            }
+        })
+    }
+
+    const handleSave = () => {
+        formRef.value.validate().then(() => {
+            if (isEdit.value) {
+                const idx = tableData.value.findIndex(item => item.id === formState.id)
+                if (idx > -1) Object.assign(tableData.value[idx], formState)
+            } else {
+                tableData.value.push({ ...formState, id: Date.now() })
+            }
+            message.success('保存成功')
+            modalVisible.value = false
+            handleSearch()
+        })
+    }
+
+    onMounted(() => {
+        loadTree()
+        handleSearch()
+    })
+
 </script>
 
 <style scoped>
-.page-container { padding:24px; background:#f5f5f5; min-height:calc(100vh - 60px) }
-.toolbar { display:flex; gap:8px; background:#fff; padding:12px 16px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:12px }
-.search-card { margin-bottom:12px }
-.search-card :deep(.ant-card-body) { padding:12px }
-.compact-table :deep(.ant-table-thead > tr > th) { background:#fafafa; font-weight:600; padding:8px 12px }
-.compact-table :deep(.ant-table-tbody > tr > td) { padding:8px 12px }
-@media (max-width:768px){ .page-container{ padding:8px } .toolbar{ flex-wrap:wrap } }
+    .page-container {
+        height: calc(100vh - 64px);
+        background-color: #f0f2f5;
+        padding: 16px;
+        overflow: hidden;
+    }
+
+    .split-layout {
+        display: flex;
+        height: 100%;
+        gap: 16px;
+    }
+
+    /* Left Panel */
+    .left-panel {
+        width: 250px;
+        min-width: 250px;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    }
+
+    .panel-header {
+        padding: 16px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .panel-title {
+        font-weight: 600;
+        font-size: 16px;
+        color: #1f1f1f;
+    }
+
+    .tree-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+    }
+
+    .node-title {
+        font-size: 14px;
+    }
+
+    /* Right Panel */
+    .right-panel {
+        flex: 1;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    }
+
+    .right-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .category-title {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .search-box {
+        padding: 16px 24px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .table-container {
+        flex: 1;
+        overflow: hidden;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+    }
 </style>

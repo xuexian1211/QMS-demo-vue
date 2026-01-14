@@ -1,94 +1,86 @@
 <template>
-  <div class="supplier-archive">
-    <div class="page-header">
-      <h2>供应商档案管理</h2>
-      <a-button type="primary" @click="showAddModal">
-        <template #icon><PlusOutlined /></template>
-        新增供应商
-      </a-button>
+  <div class="page-container">
+    <div class="toolbar">
+      <a-space>
+        <a-button type="primary" @click="showAddModal">
+          <template #icon>
+            <PlusOutlined />
+          </template>新增
+        </a-button>
+        <a-button :disabled="selectedRowKeys.length !== 1" @click="handleEditSelected">
+          <template #icon>
+            <EditOutlined />
+          </template>编辑
+        </a-button>
+        <a-button danger :disabled="selectedRowKeys.length === 0" @click="handleBatchDelete">
+          <template #icon>
+            <DeleteOutlined />
+          </template>删除
+        </a-button>
+        <a-dropdown :disabled="selectedRowKeys.length === 0">
+          <a-button>状态操作
+            <DownOutlined />
+          </a-button>
+          <template #overlay>
+            <a-menu @click="handleBatchStatusChange">
+              <a-menu-item key="enable">批量启用</a-menu-item>
+              <a-menu-item key="disable">批量禁用</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+        <a-button @click="handleExport">
+          <template #icon>
+            <ExportOutlined />
+          </template>导出
+        </a-button>
+        <a-button @click="fetchData">
+          <template #icon>
+            <ReloadOutlined />
+          </template>刷新
+        </a-button>
+      </a-space>
     </div>
 
-    <div class="search-form">
-      <a-form layout="inline" :model="searchForm" @finish="handleSearch">
+    <a-card class="search-card" :bordered="false">
+      <a-form layout="inline" :model="searchForm">
         <a-form-item label="供应商编码">
-          <a-input 
-            v-model:value="searchForm.supplierCode" 
-            placeholder="请输入供应商编码"
-            allow-clear
-            style="width: 200px"
-          />
+          <a-input v-model:value="searchForm.supplierCode" placeholder="请输入" allow-clear />
         </a-form-item>
         <a-form-item label="供应商名称">
-          <a-input 
-            v-model:value="searchForm.supplierName" 
-            placeholder="请输入供应商名称"
-            allow-clear
-            style="width: 200px"
-          />
+          <a-input v-model:value="searchForm.supplierName" placeholder="请输入" allow-clear />
         </a-form-item>
         <a-form-item label="供应商等级">
-          <a-select 
-            v-model:value="searchForm.supplierLevel" 
-            placeholder="请选择供应商等级"
-            allow-clear
-            style="width: 150px"
-          >
+          <a-select v-model:value="searchForm.supplierLevel" style="width: 130px" placeholder="请选择" allow-clear>
             <a-select-option value="A">A级供应商</a-select-option>
             <a-select-option value="B">B级供应商</a-select-option>
             <a-select-option value="C">C级供应商</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="供应类型">
-          <a-select 
-            v-model:value="searchForm.supplyType" 
-            placeholder="请选择供应类型"
-            allow-clear
-            style="width: 150px"
-          >
+          <a-select v-model:value="searchForm.supplyType" style="width: 120px" placeholder="请选择" allow-clear>
             <a-select-option value="raw_material">原材料</a-select-option>
             <a-select-option value="equipment">设备</a-select-option>
             <a-select-option value="service">服务</a-select-option>
             <a-select-option value="other">其他</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="联系人">
-          <a-input 
-            v-model:value="searchForm.contactPerson" 
-            placeholder="请输入联系人"
-            allow-clear
-            style="width: 150px"
-          />
-        </a-form-item>
         <a-form-item label="状态">
-          <a-select 
-            v-model:value="searchForm.status" 
-            placeholder="请选择状态"
-            allow-clear
-            style="width: 120px"
-          >
+          <a-select v-model:value="searchForm.status" style="width: 100px" placeholder="请选择" allow-clear>
             <a-select-option value="1">启用</a-select-option>
             <a-select-option value="0">禁用</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <a-button type="primary" html-type="submit">
-            <template #icon><SearchOutlined /></template>
-            搜索
-          </a-button>
+          <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetSearch">重置</a-button>
         </a-form-item>
       </a-form>
-    </div>
+    </a-card>
 
     <div class="table-container">
-      <a-table 
-        :columns="columns" 
-        :data-source="dataSource" 
-        :loading="loading"
-        :pagination="pagination"
-        row-key="id"
-        @change="handleTableChange"
-      >
+      <a-table :columns="columns" :data-source="dataSource" :loading="loading" row-key="id" size="middle"
+        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }" :pagination="pagination"
+        @change="handleTableChange">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'supplierLevel'">
             <a-tag :color="getSupplierLevelColor(record.supplierLevel)">
@@ -110,25 +102,11 @@
           </template>
           <template v-if="column.key === 'action'">
             <a-space>
-              <a-button type="link" size="small" @click="handleEdit(record)">
-                <template #icon><EditOutlined /></template>
-                编辑
-              </a-button>
-              <a-button type="link" size="small" @click="handleView(record)">
-                <template #icon><EyeOutlined /></template>
-                查看
-              </a-button>
-              <a-popconfirm
-                title="确定要删除这个供应商档案吗？"
-                @confirm="handleDelete(record.id)"
-                ok-text="确定"
-                cancel-text="取消"
-              >
-                <a-button type="link" size="small" danger>
-                  <template #icon><DeleteOutlined /></template>
-                  删除
-                </a-button>
-              </a-popconfirm>
+              <a-button type="link" size="small" @click="handleView(record)">查看</a-button>
+              <a-divider type="vertical" />
+              <a-button type="link" size="small" @click="handleEdit(record)">编辑</a-button>
+              <a-divider type="vertical" />
+              <a-button type="link" danger size="small" @click="handleDelete(record)">删除</a-button>
             </a-space>
           </template>
         </template>
@@ -136,19 +114,9 @@
     </div>
 
     <!-- 新增/编辑模态框 -->
-    <a-modal
-      v-model:visible="modalVisible"
-      :title="modalTitle"
-      width="1000px"
-      @ok="handleSubmit"
-      @cancel="handleCancel"
-    >
-      <a-form
-        ref="formRef"
-        :model="formData"
-        :rules="rules"
-        layout="vertical"
-      >
+    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="1000px" @ok="handleSubmit"
+      @cancel="handleCancel">
+      <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="供应商编码" name="supplierCode">
@@ -198,17 +166,12 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="合作年限" name="cooperationYears">
-              <a-input-number 
-                v-model:value="formData.cooperationYears" 
-                placeholder="请输入合作年限"
-                :min="0"
-                :max="50"
-                style="width: 100%"
-              />
+              <a-input-number v-model:value="formData.cooperationYears" placeholder="请输入" :min="0" :max="50"
+                style="width: 100%" />
             </a-form-item>
           </a-col>
         </a-row>
-        
+
         <a-divider>基本信息</a-divider>
         <a-row :gutter="16">
           <a-col :span="12">
@@ -235,53 +198,9 @@
           </a-col>
         </a-row>
         <a-form-item label="详细地址" name="address">
-          <a-textarea 
-            v-model:value="formData.address" 
-            placeholder="请输入详细地址"
-            :rows="2"
-          />
+          <a-textarea v-model:value="formData.address" placeholder="请输入详细地址" :rows="2" />
         </a-form-item>
-        
-        <a-divider>联系人信息</a-divider>
-        <a-form-item label="联系人列表">
-          <a-table 
-            :columns="contactColumns" 
-            :data-source="formData.contacts" 
-            :pagination="false"
-            size="small"
-          >
-            <template #bodyCell="{ column, record, index }">
-              <template v-if="column.key === 'name'">
-                <a-input v-model:value="record.name" placeholder="姓名" />
-              </template>
-              <template v-if="column.key === 'position'">
-                <a-input v-model:value="record.position" placeholder="职位" />
-              </template>
-              <template v-if="column.key === 'phone'">
-                <a-input v-model:value="record.phone" placeholder="电话" />
-              </template>
-              <template v-if="column.key === 'email'">
-                <a-input v-model:value="record.email" placeholder="邮箱" />
-              </template>
-              <template v-if="column.key === 'isPrimary'">
-                <a-checkbox v-model:checked="record.isPrimary">主要联系人</a-checkbox>
-              </template>
-              <template v-if="column.key === 'action'">
-                <a-button type="link" size="small" danger @click="removeContact(index)">
-                  <template #icon><DeleteOutlined /></template>
-                  删除
-                </a-button>
-              </template>
-            </template>
-            <template #footer>
-              <a-button type="dashed" @click="addContact" block>
-                <template #icon><PlusOutlined /></template>
-                添加联系人
-              </a-button>
-            </template>
-          </a-table>
-        </a-form-item>
-        
+
         <a-divider>其他信息</a-divider>
         <a-row :gutter="16">
           <a-col :span="12">
@@ -296,22 +215,13 @@
           </a-col>
         </a-row>
         <a-form-item label="备注" name="remark">
-          <a-textarea 
-            v-model:value="formData.remark" 
-            placeholder="请输入备注信息"
-            :rows="3"
-          />
+          <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="3" />
         </a-form-item>
       </a-form>
     </a-modal>
 
     <!-- 查看详情模态框 -->
-    <a-modal
-      v-model:visible="viewModalVisible"
-      title="供应商详情"
-      width="900px"
-      :footer="null"
-    >
+    <a-modal v-model:visible="viewModalVisible" title="供应商详情" width="900px" :footer="null">
       <a-descriptions :column="3" bordered>
         <a-descriptions-item label="供应商编码">{{ viewData.supplierCode }}</a-descriptions-item>
         <a-descriptions-item label="供应商名称">{{ viewData.supplierName }}</a-descriptions-item>
@@ -344,453 +254,42 @@
         <a-descriptions-item label="创建时间">{{ viewData.createTime }}</a-descriptions-item>
         <a-descriptions-item label="备注" :span="3">{{ viewData.remark || '无' }}</a-descriptions-item>
       </a-descriptions>
-      
-      <a-divider>联系人信息</a-divider>
-      <a-table 
-        :columns="contactColumns" 
-        :data-source="viewData.contacts || []" 
-        :pagination="false"
-        size="small"
-      />
     </a-modal>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { message } from 'ant-design-vue'
-import {
-  PlusOutlined,
-  SearchOutlined,
-  EditOutlined,
-  EyeOutlined,
-  DeleteOutlined
-} from '@ant-design/icons-vue'
+  import { ref, reactive, onMounted, computed } from 'vue'
+  import { message, Modal } from 'ant-design-vue'
+  import {
+    PlusOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    ExportOutlined,
+    ReloadOutlined,
+    DownOutlined
+  } from '@ant-design/icons-vue'
+  import { useExport } from '@/utils/excel'
 
-// 响应式数据
-const loading = ref(false)
-const modalVisible = ref(false)
-const viewModalVisible = ref(false)
-const isEdit = ref(false)
-const formRef = ref()
+  // 响应式数据
+  const loading = ref(false)
+  const modalVisible = ref(false)
+  const viewModalVisible = ref(false)
+  const isEdit = ref(false)
+  const formRef = ref()
+  const selectedRowKeys = ref([])
 
-// 搜索表单
-const searchForm = reactive({
-  supplierCode: '',
-  supplierName: '',
-  supplierLevel: undefined,
-  supplyType: undefined,
-  contactPerson: '',
-  status: undefined
-})
-
-// 表单数据
-const formData = reactive({
-  id: '',
-  supplierCode: '',
-  supplierName: '',
-  supplierLevel: 'B',
-  supplyType: 'raw_material',
-  creditLevel: 3,
-  cooperationYears: 1,
-  creditCode: '',
-  legalPerson: '',
-  phone: '',
-  email: '',
-  address: '',
-  bankName: '',
-  bankAccount: '',
-  remark: '',
-  status: '1',
-  contacts: []
-})
-
-// 联系人列表定义
-const contactColumns = [
-  {
-    title: '姓名',
-    dataIndex: 'name',
-    key: 'name',
-    width: 100
-  },
-  {
-    title: '职位',
-    dataIndex: 'position',
-    key: 'position',
-    width: 100
-  },
-  {
-    title: '电话',
-    dataIndex: 'phone',
-    key: 'phone',
-    width: 120
-  },
-  {
-    title: '邮箱',
-    dataIndex: 'email',
-    key: 'email',
-    width: 150
-  },
-  {
-    title: '主要联系人',
-    dataIndex: 'isPrimary',
-    key: 'isPrimary',
-    width: 100
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 80
-  }
-]
-
-// 表格列定义
-const columns = [
-  {
-    title: '供应商编码',
-    dataIndex: 'supplierCode',
-    key: 'supplierCode',
-    width: 120,
-    fixed: 'left'
-  },
-  {
-    title: '供应商名称',
-    dataIndex: 'supplierName',
-    key: 'supplierName',
-    width: 150,
-    fixed: 'left'
-  },
-  {
-    title: '供应商等级',
-    dataIndex: 'supplierLevel',
-    key: 'supplierLevel',
-    width: 100
-  },
-  {
-    title: '供应类型',
-    dataIndex: 'supplyType',
-    key: 'supplyType',
-    width: 100
-  },
-  {
-    title: '信用等级',
-    dataIndex: 'creditLevel',
-    key: 'creditLevel',
-    width: 120
-  },
-  {
-    title: '合作年限',
-    dataIndex: 'cooperationYears',
-    key: 'cooperationYears',
-    width: 80,
-    customRender: ({ record }) => `${record.cooperationYears}年`
-  },
-  {
-    title: '联系人',
-    dataIndex: 'primaryContact',
-    key: 'primaryContact',
-    width: 100,
-    customRender: ({ record }) => {
-      const primaryContact = record.contacts?.find(c => c.isPrimary)
-      return primaryContact ? primaryContact.name : '未设置'
-    }
-  },
-  {
-    title: '联系电话',
-    dataIndex: 'phone',
-    key: 'phone',
-    width: 120
-  },
-  {
-    title: '邮箱地址',
-    dataIndex: 'email',
-    key: 'email',
-    width: 180
-  },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    key: 'status',
-    width: 80
-  },
-  {
-    title: '创建时间',
-    dataIndex: 'createTime',
-    key: 'createTime',
-    width: 150
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 200,
-    fixed: 'right'
-  }
-]
-
-// 表格数据
-const dataSource = ref([
-  {
-    id: '1',
-    supplierCode: 'SUP001',
-    supplierName: '富士康科技集团',
-    supplierLevel: 'A',
-    supplyType: 'equipment',
-    creditLevel: 4,
-    cooperationYears: 5,
-    creditCode: '91440300617505445L',
-    legalPerson: '郭台铭',
-    phone: '0755-28128888',
-    email: 'supplier@foxconn.com',
-    address: '广东省深圳市宝安区龙华街道富士康科技园',
-    bankName: '中国建设银行深圳分行',
-    bankAccount: '6227007200012345678',
-    remark: '主要设备供应商',
-    status: '1',
-    createTime: '2024-01-15 10:30:00',
-    updateTime: '2024-01-15 10:30:00',
-    contacts: [
-      { name: '王总监', position: '销售总监', phone: '13800138003', email: 'wang@foxconn.com', isPrimary: true },
-      { name: '陈经理', position: '客户经理', phone: '13800138004', email: 'chen@foxconn.com', isPrimary: false }
-    ]
-  },
-  {
-    id: '2',
-    supplierCode: 'SUP002',
-    supplierName: '中芯国际集成电路制造有限公司',
-    supplierLevel: 'A',
-    supplyType: 'raw_material',
-    creditLevel: 4.5,
-    cooperationYears: 3,
-    creditCode: '91310115764784131X',
-    legalPerson: '周子学',
-    phone: '021-38610000',
-    email: 'contact@smics.com',
-    address: '上海市浦东新区张江路18号',
-    bankName: '中国工商银行上海分行',
-    bankAccount: '6222021000012345678',
-    remark: '芯片原材料供应商',
-    status: '1',
-    createTime: '2024-01-15 10:35:00',
-    updateTime: '2024-01-15 10:35:00',
-    contacts: [
-      { name: '李总', position: '销售总经理', phone: '13800138005', email: 'li@smics.com', isPrimary: true },
-      { name: '张经理', position: '技术支持', phone: '13800138006', email: 'zhang@smics.com', isPrimary: false }
-    ]
-  },
-  {
-    id: '3',
-    supplierCode: 'SUP003',
-    supplierName: '京东方科技集团股份有限公司',
-    supplierLevel: 'B',
-    supplyType: 'raw_material',
-    creditLevel: 3.5,
-    cooperationYears: 2,
-    creditCode: '91110108101738232B',
-    legalPerson: '陈炎顺',
-    phone: '010-64318888',
-    email: 'supplier@boe.com.cn',
-    address: '北京市朝阳区酒仙桥路10号',
-    bankName: '中国银行北京分行',
-    bankAccount: '6217901000012345678',
-    remark: '显示屏供应商',
-    status: '1',
-    createTime: '2024-01-15 10:40:00',
-    updateTime: '2024-01-15 10:40:00',
-    contacts: [
-      { name: '赵总', position: '销售总监', phone: '13800138007', email: 'zhao@boe.com.cn', isPrimary: true },
-      { name: '钱经理', position: '客户经理', phone: '13800138008', email: 'qian@boe.com.cn', isPrimary: false }
-    ]
-  }
-])
-
-// 分页配置
-const pagination = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 3,
-  showSizeChanger: true,
-  showQuickJumper: true,
-  showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-})
-
-// 查看数据
-const viewData = ref({})
-
-// 表单验证规则
-const rules = {
-  supplierCode: [
-    { required: true, message: '请输入供应商编码', trigger: 'blur' }
-  ],
-  supplierName: [
-    { required: true, message: '请输入供应商名称', trigger: 'blur' }
-  ],
-  supplierLevel: [
-    { required: true, message: '请选择供应商等级', trigger: 'change' }
-  ],
-  supplyType: [
-    { required: true, message: '请选择供应类型', trigger: 'change' }
-  ],
-  phone: [
-    { required: true, message: '请输入联系电话', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
-  ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-  ]
-}
-
-// 工具方法
-const getSupplierLevelText = (level) => {
-  const levelMap = {
-    'A': 'A级供应商',
-    'B': 'B级供应商',
-    'C': 'C级供应商'
-  }
-  return levelMap[level] || '未知'
-}
-
-const getSupplierLevelColor = (level) => {
-  const colorMap = {
-    'A': 'red',
-    'B': 'orange',
-    'C': 'blue'
-  }
-  return colorMap[level] || 'default'
-}
-
-const getSupplyTypeText = (type) => {
-  const typeMap = {
-    'raw_material': '原材料',
-    'equipment': '设备',
-    'service': '服务',
-    'other': '其他'
-  }
-  return typeMap[type] || '未知'
-}
-
-const getSupplyTypeColor = (type) => {
-  const colorMap = {
-    'raw_material': 'green',
-    'equipment': 'blue',
-    'service': 'purple',
-    'other': 'gray'
-  }
-  return colorMap[type] || 'default'
-}
-
-// 计算属性
-const modalTitle = computed(() => isEdit.value ? '编辑供应商档案' : '新增供应商档案')
-
-// 方法
-const handleSearch = () => {
-  pagination.current = 1
-  fetchData()
-}
-
-const resetSearch = () => {
-  Object.assign(searchForm, {
+  // 搜索表单
+  const searchForm = reactive({
     supplierCode: '',
     supplierName: '',
     supplierLevel: undefined,
     supplyType: undefined,
-    contactPerson: '',
     status: undefined
   })
-  handleSearch()
-}
 
-const handleTableChange = (pag, filters, sorter) => {
-  pagination.current = pag.current
-  pagination.pageSize = pag.pageSize
-  fetchData()
-}
-
-const showAddModal = () => {
-  isEdit.value = false
-  modalVisible.value = true
-  resetForm()
-}
-
-const handleEdit = (record) => {
-  isEdit.value = true
-  modalVisible.value = true
-  Object.assign(formData, {
-    ...record,
-    contacts: [...(record.contacts || [])]
-  })
-}
-
-const handleView = (record) => {
-  viewData.value = record
-  viewModalVisible.value = true
-}
-
-const handleDelete = (id) => {
-  // 模拟删除操作
-  const index = dataSource.value.findIndex(item => item.id === id)
-  if (index > -1) {
-    dataSource.value.splice(index, 1)
-    message.success('删除成功')
-    fetchData()
-  }
-}
-
-const addContact = () => {
-  const newContact = {
-    name: '',
-    position: '',
-    phone: '',
-    email: '',
-    isPrimary: false
-  }
-  formData.contacts.push(newContact)
-}
-
-const removeContact = (index) => {
-  formData.contacts.splice(index, 1)
-}
-
-const handleSubmit = async () => {
-  try {
-    await formRef.value.validate()
-    
-    if (isEdit.value) {
-      // 编辑操作
-      const index = dataSource.value.findIndex(item => item.id === formData.id)
-      if (index > -1) {
-        dataSource.value[index] = {
-          ...formData,
-          updateTime: new Date().toLocaleString()
-        }
-        message.success('更新成功')
-      }
-    } else {
-      // 新增操作
-      const newId = (Math.max(...dataSource.value.map(item => parseInt(item.id))) + 1).toString()
-      const newItem = {
-        ...formData,
-        id: newId,
-        createTime: new Date().toLocaleString(),
-        updateTime: new Date().toLocaleString()
-      }
-      dataSource.value.push(newItem)
-      message.success('新增成功')
-    }
-    
-    modalVisible.value = false
-    fetchData()
-  } catch (error) {
-    console.error('表单验证失败:', error)
-  }
-}
-
-const handleCancel = () => {
-  modalVisible.value = false
-  resetForm()
-}
-
-const resetForm = () => {
-  Object.assign(formData, {
+  // 表单数据
+  const formData = reactive({
     id: '',
     supplierCode: '',
     supplierName: '',
@@ -806,98 +305,269 @@ const resetForm = () => {
     bankName: '',
     bankAccount: '',
     remark: '',
-    status: '1',
-    contacts: []
+    status: '1'
   })
-  formRef.value?.resetFields()
-}
 
-const fetchData = () => {
-  loading.value = true
-  // 模拟API调用
-  setTimeout(() => {
-    // 这里可以根据搜索条件过滤数据
-    let filteredData = [...dataSource.value]
-    
-    if (searchForm.supplierCode) {
-      filteredData = filteredData.filter(item => 
-        item.supplierCode.includes(searchForm.supplierCode)
-      )
-    }
-    
-    if (searchForm.supplierName) {
-      filteredData = filteredData.filter(item => 
-        item.supplierName.includes(searchForm.supplierName)
-      )
-    }
-    
-    if (searchForm.supplierLevel) {
-      filteredData = filteredData.filter(item => item.supplierLevel === searchForm.supplierLevel)
-    }
-    
-    if (searchForm.supplyType) {
-      filteredData = filteredData.filter(item => item.supplyType === searchForm.supplyType)
-    }
-    
-    if (searchForm.contactPerson) {
-      filteredData = filteredData.filter(item => {
-        const primaryContact = item.contacts?.find(c => c.isPrimary)
-        return primaryContact && primaryContact.name.includes(searchForm.contactPerson)
-      })
-    }
-    
-    if (searchForm.status !== undefined) {
-      filteredData = filteredData.filter(item => item.status === searchForm.status)
-    }
-    
-    pagination.total = filteredData.length
-    loading.value = false
-  }, 500)
-}
+  // 表格列定义
+  const columns = [
+    { title: '供应商编码', dataIndex: 'supplierCode', key: 'supplierCode', width: 120 },
+    { title: '供应商名称', dataIndex: 'supplierName', key: 'supplierName', width: 180 },
+    { title: '供应商等级', dataIndex: 'supplierLevel', key: 'supplierLevel', width: 100 },
+    { title: '供应类型', dataIndex: 'supplyType', key: 'supplyType', width: 100 },
+    { title: '信用等级', dataIndex: 'creditLevel', key: 'creditLevel', width: 140 },
+    { title: '合作年限', dataIndex: 'cooperationYears', key: 'cooperationYears', width: 80, customRender: ({ record }) => `${record.cooperationYears}年` },
+    { title: '联系电话', dataIndex: 'phone', key: 'phone', width: 120 },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 80 },
+    { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 150 },
+    { title: '操作', key: 'action', width: 180, fixed: 'right' }
+  ]
 
-// 生命周期
-onMounted(() => {
-  fetchData()
-})
+  // 表格数据
+  const dataSource = ref([
+    { id: '1', supplierCode: 'SUP001', supplierName: '富士康科技集团', supplierLevel: 'A', supplyType: 'equipment', creditLevel: 4, cooperationYears: 5, creditCode: '91440300617505445L', legalPerson: '郭台铭', phone: '0755-28128888', email: 'supplier@foxconn.com', address: '广东省深圳市宝安区龙华街道富士康科技园', bankName: '中国建设银行深圳分行', bankAccount: '622700720001234567', remark: '主要设备供应商', status: '1', createTime: '2024-01-15 10:30:00', updateTime: '2024-01-15 10:30:00' },
+    { id: '2', supplierCode: 'SUP002', supplierName: '中芯国际集成电路制造有限公司', supplierLevel: 'A', supplyType: 'raw_material', creditLevel: 4.5, cooperationYears: 3, creditCode: '91310115764784131X', legalPerson: '周子学', phone: '021-38610000', email: 'contact@smics.com', address: '上海市浦东新区张江路18号', bankName: '中国工商银行上海分行', bankAccount: '622202100001234567', remark: '芯片原材料供应商', status: '1', createTime: '2024-01-15 10:35:00', updateTime: '2024-01-15 10:35:00' },
+    { id: '3', supplierCode: 'SUP003', supplierName: '京东方科技集团股份有限公司', supplierLevel: 'B', supplyType: 'raw_material', creditLevel: 3.5, cooperationYears: 2, creditCode: '91110108101738232B', legalPerson: '陈炎顺', phone: '010-64318888', email: 'supplier@boe.com.cn', address: '北京市朝阳区酒仙桥路10号', bankName: '中国银行北京分行', bankAccount: '621790100001234567', remark: '显示屏供应商', status: '1', createTime: '2024-01-15 10:40:00', updateTime: '2024-01-15 10:40:00' }
+  ])
+
+  // 分页配置
+  const pagination = reactive({
+    current: 1,
+    pageSize: 20,
+    total: 3,
+    showSizeChanger: true,
+    showQuickJumper: true
+  })
+
+  // 查看数据
+  const viewData = ref({})
+
+  // 表单验证规则
+  const rules = {
+    supplierCode: [{ required: true, message: '请输入供应商编码', trigger: 'blur' }],
+    supplierName: [{ required: true, message: '请输入供应商名称', trigger: 'blur' }],
+    supplierLevel: [{ required: true, message: '请选择供应商等级', trigger: 'change' }],
+    supplyType: [{ required: true, message: '请选择供应类型', trigger: 'change' }],
+    phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }]
+  }
+
+  // 工具方法
+  const getSupplierLevelText = (level) => {
+    const levelMap = { 'A': 'A级供应商', 'B': 'B级供应商', 'C': 'C级供应商' }
+    return levelMap[level] || '未知'
+  }
+
+  const getSupplierLevelColor = (level) => {
+    const colorMap = { 'A': 'red', 'B': 'orange', 'C': 'blue' }
+    return colorMap[level] || 'default'
+  }
+
+  const getSupplyTypeText = (type) => {
+    const typeMap = { 'raw_material': '原材料', 'equipment': '设备', 'service': '服务', 'other': '其他' }
+    return typeMap[type] || '未知'
+  }
+
+  const getSupplyTypeColor = (type) => {
+    const colorMap = { 'raw_material': 'green', 'equipment': 'blue', 'service': 'purple', 'other': 'gray' }
+    return colorMap[type] || 'default'
+  }
+
+  // 计算属性
+  const modalTitle = computed(() => isEdit.value ? '编辑供应商档案' : '新增供应商档案')
+
+  // 选择变更
+  const onSelectChange = (keys) => {
+    selectedRowKeys.value = keys
+  }
+
+  // 方法
+  const handleSearch = () => {
+    pagination.current = 1
+    fetchData()
+  }
+
+  const resetSearch = () => {
+    Object.assign(searchForm, { supplierCode: '', supplierName: '', supplierLevel: undefined, supplyType: undefined, status: undefined })
+    handleSearch()
+  }
+
+  const handleTableChange = (pag) => {
+    pagination.current = pag.current
+    pagination.pageSize = pag.pageSize
+    fetchData()
+  }
+
+  const showAddModal = () => {
+    isEdit.value = false
+    modalVisible.value = true
+    resetForm()
+  }
+
+  const handleEditSelected = () => {
+    const record = dataSource.value.find(i => i.id === selectedRowKeys.value[0])
+    if (record) handleEdit(record)
+  }
+
+  const handleEdit = (record) => {
+    isEdit.value = true
+    modalVisible.value = true
+    Object.assign(formData, { ...record })
+  }
+
+  const handleView = (record) => {
+    viewData.value = record
+    viewModalVisible.value = true
+  }
+
+  const handleDelete = (record) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定删除供应商 ${record.supplierName} 吗？`,
+      okType: 'danger',
+      onOk() {
+        const index = dataSource.value.findIndex(item => item.id === record.id)
+        if (index > -1) {
+          dataSource.value.splice(index, 1)
+          message.success('删除成功')
+          fetchData()
+        }
+      }
+    })
+  }
+
+  const handleBatchDelete = () => {
+    Modal.confirm({
+      title: '确认批量删除',
+      content: `确定删除选中的 ${selectedRowKeys.value.length} 条记录吗？`,
+      okType: 'danger',
+      onOk() {
+        dataSource.value = dataSource.value.filter(i => !selectedRowKeys.value.includes(i.id))
+        selectedRowKeys.value = []
+        message.success('删除成功')
+      }
+    })
+  }
+
+  const handleSubmit = async () => {
+    try {
+      await formRef.value.validate()
+
+      if (isEdit.value) {
+        const index = dataSource.value.findIndex(item => item.id === formData.id)
+        if (index > -1) {
+          dataSource.value[index] = { ...formData, updateTime: new Date().toLocaleString() }
+          message.success('更新成功')
+        }
+      } else {
+        const newId = (Math.max(...dataSource.value.map(item => parseInt(item.id))) + 1).toString()
+        const newItem = {
+          ...formData, id: newId,
+          createTime: new Date().toLocaleString(), updateTime: new Date().toLocaleString()
+        }
+        dataSource.value.push(newItem)
+        message.success('新增成功')
+      }
+
+      modalVisible.value = false
+      fetchData()
+    } catch (error) {
+      console.error('表单验证失败:', error)
+    }
+  }
+
+  const handleCancel = () => {
+    modalVisible.value = false
+    resetForm()
+  }
+
+  const resetForm = () => {
+    Object.assign(formData, {
+      id: '', supplierCode: '', supplierName: '', supplierLevel: 'B', supplyType: 'raw_material',
+      creditLevel: 3, cooperationYears: 1, creditCode: '', legalPerson: '', phone: '', email: '',
+      address: '', bankName: '', bankAccount: '', remark: '', status: '1'
+    })
+    formRef.value?.resetFields()
+  }
+
+  const handleExport = () => {
+    if (dataSource.value.length === 0) {
+      message.warning('暂无数据可导出')
+      return
+    }
+    const exportColumns = [
+      { title: '供应商编码', dataIndex: 'supplierCode' },
+      { title: '供应商名称', dataIndex: 'supplierName' },
+      { title: '供应商等级', dataIndex: 'supplierLevel' },
+      { title: '供应类型', dataIndex: 'supplyType' },
+      { title: '联系人', dataIndex: 'contact' },
+      { title: '联系电话', dataIndex: 'phone' },
+      { title: '状态', dataIndex: 'status' }
+    ]
+    const { exportToCSV } = useExport()
+    exportToCSV(dataSource.value, exportColumns, '供应商档案')
+    message.success('导出成功')
+  }
+
+  const handleBatchStatusChange = ({ key }) => {
+    const newStatus = key === 'enable' ? '1' : '0'
+    const statusText = key === 'enable' ? '启用' : '禁用'
+    Modal.confirm({
+      title: `确认批量${statusText}`,
+      content: `确定${statusText}选中的 ${selectedRowKeys.value.length} 条记录吗？`,
+      onOk() {
+        dataSource.value.forEach(item => {
+          if (selectedRowKeys.value.includes(item.id)) {
+            item.status = newStatus
+          }
+        })
+        selectedRowKeys.value = []
+        message.success(`批量${statusText}成功`)
+      }
+    })
+  }
+
+  const fetchData = () => {
+    loading.value = true
+    setTimeout(() => {
+      let filteredData = [...dataSource.value]
+      if (searchForm.supplierCode) filteredData = filteredData.filter(item => item.supplierCode.includes(searchForm.supplierCode))
+      if (searchForm.supplierName) filteredData = filteredData.filter(item => item.supplierName.includes(searchForm.supplierName))
+      if (searchForm.supplierLevel) filteredData = filteredData.filter(item => item.supplierLevel === searchForm.supplierLevel)
+      if (searchForm.supplyType) filteredData = filteredData.filter(item => item.supplyType === searchForm.supplyType)
+      if (searchForm.status !== undefined) filteredData = filteredData.filter(item => item.status === searchForm.status)
+      pagination.total = filteredData.length
+      loading.value = false
+    }, 300)
+  }
+
+  // 生命周期
+  onMounted(() => {
+    fetchData()
+  })
 </script>
 
 <style scoped>
-.supplier-archive {
-  padding: 24px;
-  background: #fff;
-  border-radius: 8px;
-}
+  .page-container {
+    padding: 24px;
+    background: #f0f2f5;
+    min-height: calc(100vh - 64px);
+  }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
+  .toolbar {
+    background: #fff;
+    padding: 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+  }
 
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #262626;
-}
+  .search-card {
+    margin-bottom: 16px;
+  }
 
-.search-form {
-  background: #fafafa;
-  padding: 16px;
-  border-radius: 6px;
-  margin-bottom: 16px;
-}
-
-.table-container {
-  margin-top: 16px;
-}
-
-:deep(.ant-table-tbody > tr:hover > td) {
-  background: #f5f5f5;
-}
-
-:deep(.ant-rate) {
-  font-size: 14px;
-}
+  .table-container {
+    background: #fff;
+    padding: 16px;
+    border-radius: 4px;
+  }
 </style>

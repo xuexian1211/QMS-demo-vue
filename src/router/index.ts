@@ -63,18 +63,7 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   },
-  {
-    path: '/production-quality/quality-inspection/inspection-templates',
-    name: 'InspectionTemplates',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '检验模板' },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/production-quality/quality-inspection/InspectionTemplates.vue')
-      }
-    ]
-  },
+
   {
     path: '/production-quality/quality-inspection/inspection-rules',
     name: 'InspectionRules',
@@ -633,6 +622,34 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   },
+  // 工艺路线编辑页面
+  {
+    path: '/basic-data/process-route/create',
+    name: 'ProcessRouteCreate',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '新增工艺路线' },
+    children: [
+      { path: '', component: () => import('@/views/basic-data/ProcessRouteEdit.vue') }
+    ]
+  },
+  {
+    path: '/basic-data/process-route/view/:id',
+    name: 'ProcessRouteView',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '查看工艺路线' },
+    children: [
+      { path: '', component: () => import('@/views/basic-data/ProcessRouteEdit.vue') }
+    ]
+  },
+  {
+    path: '/basic-data/process-route/edit/:id',
+    name: 'ProcessRouteEditPage',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '编辑工艺路线' },
+    children: [
+      { path: '', component: () => import('@/views/basic-data/ProcessRouteEdit.vue') }
+    ]
+  },
   {
     path: '/basic-data/production-team',
     name: 'ProductionTeam',
@@ -689,7 +706,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        redirect: '/inspection-model/defect-categories'
+        redirect: '/inspection-model/defect-phenomena'
       }
     ]
   },
@@ -775,33 +792,7 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/views/inspection-model/InspMethodList.vue') }
     ]
   },
-  {
-    path: '/inspection-model/insp-methods/create',
-    name: 'InspectionModelInspMethodCreate',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '检验方法-新增', hideInMenu: true },
-    children: [
-      { path: '', component: () => import('@/views/inspection-model/InspMethodEdit.vue') }
-    ]
-  },
-  {
-    path: '/inspection-model/insp-methods/edit/:id',
-    name: 'InspectionModelInspMethodEdit',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '检验方法-编辑', hideInMenu: true },
-    children: [
-      { path: '', component: () => import('@/views/inspection-model/InspMethodEdit.vue') }
-    ]
-  },
-  {
-    path: '/inspection-model/insp-methods/view/:id',
-    name: 'InspectionModelInspMethodView',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '检验方法-查看', hideInMenu: true },
-    children: [
-      { path: '', component: () => import('@/views/inspection-model/InspMethodEdit.vue') }
-    ]
-  },
+
   {
     path: '/inspection-model/sampling-plans',
     name: 'InspectionModelSamplingPlans',
@@ -811,33 +802,7 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/views/inspection-model/SamplingPlanList.vue') }
     ]
   },
-  {
-    path: '/inspection-model/sampling-plans/create',
-    name: 'InspectionModelSamplingPlanCreate',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '抽样方案-新增', hideInMenu: true },
-    children: [
-      { path: '', component: () => import('@/views/inspection-model/SamplingPlanEdit.vue') }
-    ]
-  },
-  {
-    path: '/inspection-model/sampling-plans/edit/:id',
-    name: 'InspectionModelSamplingPlanEdit',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '抽样方案-编辑', hideInMenu: true },
-    children: [
-      { path: '', component: () => import('@/views/inspection-model/SamplingPlanEdit.vue') }
-    ]
-  },
-  {
-    path: '/inspection-model/sampling-plans/view/:id',
-    name: 'InspectionModelSamplingPlanView',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '抽样方案-查看', hideInMenu: true },
-    children: [
-      { path: '', component: () => import('@/views/inspection-model/SamplingPlanEdit.vue') }
-    ]
-  },
+
   {
     path: '/inspection-model/inspection-items',
     name: 'InspectionModelInspectionItems',
@@ -848,8 +813,8 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/inspection-items/create',
-    name: 'InspectionModelInspectionItemCreate',
+    path: '/inspection-model/insp-items/create',
+    name: 'InspectionItemCreate',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验项目-新增', hideInMenu: true },
     children: [
@@ -857,8 +822,8 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/inspection-items/edit/:id',
-    name: 'InspectionModelInspectionItemEdit',
+    path: '/inspection-model/insp-items/edit/:id',
+    name: 'InspectionItemEditPage',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验项目-编辑', hideInMenu: true },
     children: [
@@ -866,14 +831,70 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/inspection-items/view/:id',
-    name: 'InspectionModelInspectionItemView',
+    path: '/inspection-model/insp-items/view/:id',
+    name: 'InspectionItemView',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验项目-查看', hideInMenu: true },
     children: [
       { path: '', component: () => import('@/views/inspection-model/InspectionItemEdit.vue') }
     ]
   },
+  {
+    path: '/inspection-model/defect-causes/create',
+    name: 'DefectCauseCreate',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '不良原因-新增', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/DefectCauseEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/defect-causes/edit/:id',
+    name: 'DefectCauseEditPage',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '不良原因-编辑', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/DefectCauseEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/defect-causes/view/:id',
+    name: 'DefectCauseView',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '不良原因-查看', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/DefectCauseEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/sampling-plans/create',
+    name: 'SamplingPlanCreate',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '抽样方案-新增', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/SamplingPlanEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/sampling-plans/edit/:id',
+    name: 'SamplingPlanEditPage',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '抽样方案-编辑', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/SamplingPlanEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/sampling-plans/view/:id',
+    name: 'SamplingPlanView',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '抽样方案-查看', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/SamplingPlanEdit.vue') }
+    ]
+  },
+
+
   {
     path: '/inspection-model/insp-plans',
     name: 'InspectionModelInspPlans',
@@ -910,43 +931,73 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/views/inspection-model/InspPlanEdit.vue') }
     ]
   },
+
+  // 检验模板管理
   {
-    path: '/inspection-model/defect-causes/create',
-    name: 'InspectionModelDefectCauseCreate',
+    path: '/inspection-model/insp-templates',
+    name: 'InspectionModelInspTemplates',
     component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '不良原因-新增', hideInMenu: true },
+    meta: { title: '检验模板管理' },
     children: [
-      {
-        path: '',
-        component: () => import('@/views/inspection-model/DefectCauseEdit.vue')
-      }
+      { path: '', component: () => import('@/views/inspection-model/InspTemplateList.vue') }
     ]
   },
   {
-    path: '/inspection-model/defect-causes/edit/:id',
-    name: 'InspectionModelDefectCauseEdit',
+    path: '/inspection-model/insp-templates/create',
+    name: 'InspectionModelInspTemplateCreate',
     component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '不良原因-编辑', hideInMenu: true },
+    meta: { title: '检验模板-新增', hideInMenu: true },
     children: [
-      {
-        path: '',
-        component: () => import('@/views/inspection-model/DefectCauseEdit.vue')
-      }
+      { path: '', component: () => import('@/views/inspection-model/InspTemplateEdit.vue') }
     ]
   },
   {
-    path: '/inspection-model/defect-causes/view/:id',
-    name: 'InspectionModelDefectCauseView',
+    path: '/inspection-model/insp-templates/edit/:id',
+    name: 'InspectionModelInspTemplateEdit',
     component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '不良原因-查看', hideInMenu: true },
+    meta: { title: '检验模板-编辑', hideInMenu: true },
     children: [
-      {
-        path: '',
-        component: () => import('@/views/inspection-model/DefectCauseEdit.vue')
-      }
+      { path: '', component: () => import('@/views/inspection-model/InspTemplateEdit.vue') }
     ]
   },
-  
+  {
+    path: '/inspection-model/insp-templates/view/:id',
+    name: 'InspectionModelInspTemplateView',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '检验模板-查看', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/InspTemplateEdit.vue') }
+    ]
+  },
+  // 物料档案编辑页面
+  {
+    path: '/basic-data/material/create',
+    name: 'MaterialProductCreate',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '新增物料' },
+    children: [
+      { path: '', component: () => import('@/views/basic-data/MaterialProductEdit.vue') }
+    ]
+  },
+  {
+    path: '/basic-data/material/view/:id',
+    name: 'MaterialProductView',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '查看物料' },
+    children: [
+      { path: '', component: () => import('@/views/basic-data/MaterialProductEdit.vue') }
+    ]
+  },
+  {
+    path: '/basic-data/material/edit/:id',
+    name: 'MaterialProductEdit',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '编辑物料' },
+    children: [
+      { path: '', component: () => import('@/views/basic-data/MaterialProductEdit.vue') }
+    ]
+  },
+
 ]
 
 const router = createRouter({

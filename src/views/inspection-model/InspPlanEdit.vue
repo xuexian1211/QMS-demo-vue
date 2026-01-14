@@ -3,259 +3,463 @@
     <div class="page-header">
       <div class="header-left">
         <a-button type="text" @click="handleBack" class="back-button">
-          <template #icon><ArrowLeftOutlined /></template>
+          <template #icon>
+            <ArrowLeftOutlined />
+          </template>
           返回
         </a-button>
         <div class="title-section">
           <h2 class="page-title">{{ pageTitle }}</h2>
+          <a-tag v-if="form.version" color="blue">{{ form.version }}</a-tag>
+          <a-tag :color="getStatusColor(form.status)">{{ getStatusText(form.status) }}</a-tag>
         </div>
       </div>
-      <div class="header-actions">
-        <a-button type="primary" @click="handleSave" :loading="saving" v-if="!isView">保存</a-button>
+      <div class="header-actions" v-if="!isView">
+        <a-button type="primary" @click="handleSave" :loading="saving">保存</a-button>
       </div>
     </div>
 
-    <a-card size="small" class="form-card">
-      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-row :gutter="16">
-          <a-col :span="6">
-            <a-form-item label="组织ID" name="orgId">
-              <a-input-number v-model:value="form.orgId" :disabled="isView" style="width:100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="6">
+    <a-card class="form-card" title="基本信息">
+      <a-form ref="formRef" :model="form" :rules="rules" layout="horizontal" :label-col="{ span: 6 }"
+        :wrapper-col="{ span: 16 }">
+        <a-row :gutter="24">
+          <a-col :span="8">
             <a-form-item label="方案编码" name="planCode">
-              <a-input v-model:value="form.planCode" :disabled="isView" />
+              <a-input v-model:value="form.planCode" :disabled="isView || isEdit" placeholder="请输入" />
             </a-form-item>
           </a-col>
-          <a-col :span="6">
-            <a-form-item label="方案名称" name="planname">
-              <a-input v-model:value="form.planname" :disabled="isView" />
+          <a-col :span="8">
+            <a-form-item label="方案名称" name="planName">
+              <a-input v-model:value="form.planName" :disabled="isView" placeholder="请输入" />
             </a-form-item>
           </a-col>
-          <a-col :span="6">
-            <a-form-item label="版本号" name="version">
-              <a-input v-model:value="form.version" :disabled="isView" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :span="6">
-            <a-form-item label="状态" name="status">
-              <a-select v-model:value="form.status" :disabled="isView" :options="statusOptions" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="6">
-            <a-form-item label="流程ID" name="workflowInstanceId">
-              <a-input-number v-model:value="form.workflowInstanceId" :disabled="isView" style="width:100%" />
+          <a-col :span="8">
+            <a-form-item label="版本" name="version">
+              <a-input v-model:value="form.version" :disabled="isView" placeholder="如：V1.0" />
             </a-form-item>
           </a-col>
         </a-row>
-
-        <a-tabs v-model:activeKey="activeTab">
-          <a-tab-pane key="binding" tab="方案关联绑定">
-            <a-button type="dashed" size="small" style="margin-bottom:8px" @click="addBinding" v-if="!isView">新增绑定</a-button>
-            <a-table :columns="bindingColumns" :data-source="bindings" row-key="id" size="small" />
-          </a-tab-pane>
-          <a-tab-pane key="details" tab="方案明细">
-            <a-button type="dashed" size="small" style="margin-bottom:8px" @click="addDetail" v-if="!isView">新增明细</a-button>
-            <a-table :columns="detailColumns" :data-source="details" row-key="id" size="small" />
-          </a-tab-pane>
-          <a-tab-pane key="phenomenon" tab="明细不良现象绑定">
-            <a-button type="dashed" size="small" style="margin-bottom:8px" @click="addPhenomenonMap" v-if="!isView">新增绑定</a-button>
-            <a-table :columns="phenomenonColumns" :data-source="phenomenonMaps" row-key="id" size="small" />
-          </a-tab-pane>
-          <a-tab-pane key="materialSpec" tab="物料检验规格">
-            <a-button type="dashed" size="small" style="margin-bottom:8px" @click="addMaterialSpec" v-if="!isView">新增规格</a-button>
-            <a-table :columns="materialSpecColumns" :data-source="materialSpecs" row-key="id" size="small" />
-          </a-tab-pane>
-        </a-tabs>
-
-        <a-space>
-          <a-button @click="handleBack">返回列表</a-button>
-        </a-space>
+        <a-row :gutter="24">
+          <a-col :span="8">
+            <a-form-item label="检验类型" name="inspType">
+              <a-select v-model:value="form.inspType" :disabled="isView" placeholder="请选择">
+                <a-select-option value="IQC">IQC来料检验</a-select-option>
+                <a-select-option value="IPQC">IPQC过程检验</a-select-option>
+                <a-select-option value="FQC">FQC成品检验</a-select-option>
+                <a-select-option value="OQC">OQC出货检验</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
+            <a-form-item label="关联模板" name="templateId">
+              <a-select v-model:value="form.templateId" :disabled="isView" placeholder="请选择">
+                <a-select-option v-for="t in templateOptions" :key="t.id" :value="t.id">{{ t.name }}</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
+            <a-form-item label="状态">
+              <a-tag :color="getStatusColor(form.status)">{{ getStatusText(form.status) }}</a-tag>
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="24">
+          <a-col :span="16">
+            <a-form-item label="备注" name="remark" :label-col="{ span: 3 }" :wrapper-col="{ span: 20 }">
+              <a-textarea v-model:value="form.remark" :disabled="isView" :rows="2" placeholder="请输入备注" />
+            </a-form-item>
+          </a-col>
+        </a-row>
       </a-form>
+    </a-card>
+
+    <a-card class="tab-card">
+      <a-tabs v-model:activeKey="activeTab">
+        <a-tab-pane key="binding" tab="方案关联绑定">
+          <div class="tab-toolbar" v-if="!isView">
+            <a-button type="primary" size="small" @click="handleAddBinding">
+              <template #icon>
+                <PlusOutlined />
+              </template>新增绑定
+            </a-button>
+          </div>
+          <a-table :columns="bindingColumns" :data-source="bindings" row-key="id" size="small" :pagination="false">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'contextType'">
+                <a-tag>{{ record.contextType }}</a-tag>
+              </template>
+              <template v-if="column.key === 'action'">
+                <a-space v-if="!isView">
+                  <a-button type="link" size="small" @click="handleEditBinding(record)">编辑</a-button>
+                  <a-button type="link" danger size="small" @click="handleRemoveBinding(record)">删除</a-button>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </a-tab-pane>
+
+        <a-tab-pane key="details" tab="方案明细">
+          <div class="tab-toolbar" v-if="!isView">
+            <a-button type="primary" size="small" @click="handleAddDetail">
+              <template #icon>
+                <PlusOutlined />
+              </template>新增明细
+            </a-button>
+          </div>
+          <a-table :columns="detailColumns" :data-source="details" row-key="id" size="small" :pagination="false">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'isLabTestRequired'">
+                <a-switch v-model:checked="record.isLabTestRequired" :disabled="isView" size="small" />
+              </template>
+              <template v-if="column.key === 'isSpcRequired'">
+                <a-switch v-model:checked="record.isSpcRequired" :disabled="isView" size="small" />
+              </template>
+              <template v-if="column.key === 'action'">
+                <a-space v-if="!isView">
+                  <a-button type="link" size="small" @click="handleEditDetail(record)">编辑</a-button>
+                  <a-button type="link" danger size="small" @click="handleRemoveDetail(record)">删除</a-button>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </a-tab-pane>
+
+        <a-tab-pane key="phenomenon" tab="明细不良现象绑定">
+          <div class="tab-toolbar" v-if="!isView">
+            <a-button type="primary" size="small" @click="handleAddPhenomenonMap">
+              <template #icon>
+                <PlusOutlined />
+              </template>新增绑定
+            </a-button>
+          </div>
+          <a-table :columns="phenomenonColumns" :data-source="phenomenonMaps" row-key="id" size="small"
+            :pagination="false">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'action'">
+                <a-button type="link" danger size="small" @click="handleRemovePhenomenonMap(record)"
+                  v-if="!isView">删除</a-button>
+              </template>
+            </template>
+          </a-table>
+        </a-tab-pane>
+
+        <a-tab-pane key="materialSpec" tab="物料检验规格">
+          <div class="tab-toolbar" v-if="!isView">
+            <a-button type="primary" size="small" @click="handleAddMaterialSpec">
+              <template #icon>
+                <PlusOutlined />
+              </template>新增规格
+            </a-button>
+          </div>
+          <a-table :columns="materialSpecColumns" :data-source="materialSpecs" row-key="id" size="small"
+            :pagination="false">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'dataType'">
+                <a-tag :color="record.dataType === 'QUANTITATIVE' ? 'blue' : 'purple'">
+                  {{ record.dataType === 'QUANTITATIVE' ? '计量型' : '计数型' }}
+                </a-tag>
+              </template>
+              <template v-if="column.key === 'action'">
+                <a-space v-if="!isView">
+                  <a-button type="link" size="small" @click="handleEditMaterialSpec(record)">编辑</a-button>
+                  <a-button type="link" danger size="small" @click="handleRemoveMaterialSpec(record)">删除</a-button>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </a-tab-pane>
+      </a-tabs>
     </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted, h, resolveComponent } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import { ArrowLeftOutlined } from '@ant-design/icons-vue'
+  import { reactive, ref, computed, onMounted } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import { message, Modal } from 'ant-design-vue'
+  import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons-vue'
 
-const router = useRouter()
-const route = useRoute()
+  const router = useRouter()
+  const route = useRoute()
 
-const formRef = ref()
-const saving = ref(false)
-const isView = computed(() => route.path.includes('/view/'))
-const pageTitle = computed(() => {
-  if (isView.value) return '检验方案-查看'
-  return route.params.id ? '检验方案-编辑' : '检验方案-新增'
-})
+  // --- 状态定义 ---
+  const formRef = ref()
+  const saving = ref(false)
+  const activeTab = ref('binding')
 
-const statusOptions = [
-  { value: 'DRAFT', label: '草稿' },
-  { value: 'IN_APPROVAL', label: '审批中' },
-  { value: 'APPROVED', label: '已批准' },
-  { value: 'OBSOLETE', label: '已作废' }
-]
+  const isView = computed(() => route.path.includes('/view/'))
+  const isEdit = computed(() => route.path.includes('/edit/'))
+  const pageTitle = computed(() => {
+    if (isView.value) return '查看检验方案'
+    return isEdit.value ? '编辑检验方案' : '新增检验方案'
+  })
 
-const form = reactive({
-  orgId: null as number | null,
-  planCode: '',
-  planname: '',
-  version: '',
-  status: undefined as any,
-  workflowInstanceId: null as number | null
-})
+  // 模板选项
+  const templateOptions = ref([
+    { id: '1', name: 'IQC原材料检验模板' },
+    { id: '2', name: 'IPQC过程检验模板' },
+    { id: '3', name: 'FQC成品检验模板' },
+    { id: '4', name: 'OQC出货检验模板' },
+  ])
 
-const rules: any = {
-  orgId: [{ required: true, type: 'number', message: '请输入组织ID', trigger: 'change' }],
-  planCode: [{ required: true, message: '请输入方案编码', trigger: 'blur' }],
-  planname: [{ required: true, message: '请输入方案名称', trigger: 'blur' }],
-  version: [{ required: true, message: '请输入版本号', trigger: 'blur' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
-}
+  // 表单状态
+  const form = reactive({
+    id: null as string | null,
+    planCode: '',
+    planName: '',
+    version: 'V1.0',
+    status: 'DRAFT',
+    inspType: undefined as string | undefined,
+    templateId: undefined as string | undefined,
+    remark: ''
+  })
 
-const activeTab = ref('binding')
+  const rules = {
+    planCode: [{ required: true, message: '请输入方案编码', trigger: 'blur' }],
+    planName: [{ required: true, message: '请输入方案名称', trigger: 'blur' }],
+    inspType: [{ required: true, message: '请选择检验类型', trigger: 'change' }]
+  }
 
-const bindings = ref<any[]>([])
-const bindingColumns = [
-  { title: '业务上下文', dataIndex: 'contextType', key: 'contextType' },
-  { title: '物料ID', dataIndex: 'materialId', key: 'materialId' },
-  { title: '物料组ID', dataIndex: 'materialGroupId', key: 'materialGroupId' },
-  { title: '供应商ID', dataIndex: 'supplierId', key: 'supplierId' },
-  { title: '客户ID', dataIndex: 'customerId', key: 'customerId' },
-  { title: '工序号', dataIndex: 'operationNo', key: 'operationNo' },
-  { title: 'IPQC类型', dataIndex: 'ipqcType', key: 'ipqcType' },
-  { title: '触发条件', dataIndex: 'triggerCondition', key: 'triggerCondition' },
-  { title: '触发值', dataIndex: 'triggerValue', key: 'triggerValue' },
-  { title: '优先级', dataIndex: 'priority', key: 'priority' },
-  { title: '操作', key: 'actions', customRender: ({ record }: any) => {
-    const AButton = resolveComponent('a-button')
-    const ASpace = resolveComponent('a-space')
-    return h(ASpace, null, { default: () => [
-      h(AButton, { size: 'small', type: 'link', disabled: isView.value, onClick: () => removeBinding(record.id) }, { default: () => '移除' })
-    ] }) } }
-]
+  // 状态显示
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = { DRAFT: 'default', IN_APPROVAL: 'processing', APPROVED: 'success', OBSOLETE: 'error' }
+    return colorMap[status] || 'default'
+  }
 
-const details = ref<any[]>([])
-const detailColumns = [
-  { title: '检验项ID', dataIndex: 'itemId', key: 'itemId' },
-  { title: '检验项名称', dataIndex: 'itemName', key: 'itemName' },
-  { title: '顺序', dataIndex: 'sequence', key: 'sequence' },
-  { title: '抽样规则ID', dataIndex: 'samplingRuleId', key: 'samplingRuleId' },
-  { title: '特性分类', dataIndex: 'characteristicClass', key: 'characteristicClass' },
-  { title: '检验方法ID', dataIndex: 'methodId', key: 'methodId' },
-  { title: '量具类型ID', dataIndex: 'instrumentTypeId', key: 'instrumentTypeId' },
-  { title: '送检实验室', dataIndex: 'isLabTestRequired', key: 'isLabTestRequired', customRender: ({ text }: any) => text ? '是' : '否' },
-  { title: '频次类型', dataIndex: 'frequencyType', key: 'frequencyType' },
-  { title: '频次值', dataIndex: 'frequencyValue', key: 'frequencyValue' },
-  { title: '频次单位', dataIndex: 'frequencyUnit', key: 'frequencyUnit' },
-  { title: 'SPC监控', dataIndex: 'isSpcRequired', key: 'isSpcRequired', customRender: ({ text }: any) => text ? '是' : '否' },
-  { title: 'SIP附件ID', dataIndex: 'attachmentId', key: 'attachmentId' },
-  { title: '操作', key: 'actions', customRender: ({ record }: any) => {
-    const AButton = resolveComponent('a-button')
-    const ASpace = resolveComponent('a-space')
-    return h(ASpace, null, { default: () => [
-      h(AButton, { size: 'small', type: 'link', disabled: isView.value, onClick: () => removeDetail(record.id) }, { default: () => '移除' })
-    ] }) } }
-]
+  const getStatusText = (status: string) => {
+    const textMap: Record<string, string> = { DRAFT: '草稿', IN_APPROVAL: '审批中', APPROVED: '已批准', OBSOLETE: '已作废' }
+    return textMap[status] || status
+  }
 
-const phenomenonMaps = ref<any[]>([])
-const phenomenonColumns = [
-  { title: '方案明细ID', dataIndex: 'planDetailId', key: 'planDetailId' },
-  { title: '不良现象ID', dataIndex: 'phenomenonId', key: 'phenomenonId' },
-  { title: '操作', key: 'actions', customRender: ({ record }: any) => {
-    const AButton = resolveComponent('a-button')
-    const ASpace = resolveComponent('a-space')
-    return h(ASpace, null, { default: () => [
-      h(AButton, { size: 'small', type: 'link', disabled: isView.value, onClick: () => removePhenomenonMap(record.id) }, { default: () => '移除' })
-    ] }) } }
-]
+  // --- 关联绑定 ---
+  const bindings = ref < any[] > ([])
+  const bindingColumns = [
+    { title: '业务上下文', dataIndex: 'contextType', key: 'contextType', width: 120 },
+    { title: '物料编码', dataIndex: 'materialCode', key: 'materialCode', width: 120 },
+    { title: '物料名称', dataIndex: 'materialName', key: 'materialName', width: 150 },
+    { title: '供应商', dataIndex: 'supplierName', key: 'supplierName', width: 120 },
+    { title: '工序', dataIndex: 'operationName', key: 'operationName', width: 100 },
+    { title: '优先级', dataIndex: 'priority', key: 'priority', width: 80 },
+    { title: '操作', key: 'action', width: 120 }
+  ]
 
-const materialSpecs = ref<any[]>([])
-const materialSpecColumns = [
-  { title: '物料ID', dataIndex: 'materialId', key: 'materialId' },
-  { title: '检验项ID', dataIndex: 'inspItemId', key: 'inspItemId' },
-  { title: '数据类型', dataIndex: 'dataType', key: 'dataType' },
-  { title: '目标值', dataIndex: 'targetValue', key: 'targetValue' },
-  { title: '上限', dataIndex: 'upperLimit', key: 'upperLimit' },
-  { title: '下限', dataIndex: 'lowerLimit', key: 'lowerLimit' },
-  { title: '单位', dataIndex: 'uom', key: 'uom' },
-  { title: '标准描述', dataIndex: 'standardText', key: 'standardText' },
-  { title: '标准代码', dataIndex: 'standardCode', key: 'standardCode' },
-  { title: '期望值', dataIndex: 'expectedValue', key: 'expectedValue' },
-  { title: '附件ID', dataIndex: 'attachmentId', key: 'attachmentId' },
-  { title: '操作', key: 'actions', customRender: ({ record }: any) => {
-    const AButton = resolveComponent('a-button')
-    const ASpace = resolveComponent('a-space')
-    return h(ASpace, null, { default: () => [
-      h(AButton, { size: 'small', type: 'link', disabled: isView.value, onClick: () => removeMaterialSpec(record.id) }, { default: () => '移除' })
-    ] }) } }
-]
+  // --- 方案明细 ---
+  const details = ref < any[] > ([])
+  const detailColumns = [
+    { title: '检验项目', dataIndex: 'itemName', key: 'itemName', width: 150 },
+    { title: '抽样规则', dataIndex: 'samplingRuleName', key: 'samplingRuleName', width: 150 },
+    { title: '检验方法', dataIndex: 'methodName', key: 'methodName', width: 120 },
+    { title: '量检具', dataIndex: 'instrumentName', key: 'instrumentName', width: 100 },
+    { title: '实验室', key: 'isLabTestRequired', width: 80 },
+    { title: 'SPC', key: 'isSpcRequired', width: 60 },
+    { title: '操作', key: 'action', width: 120 }
+  ]
 
-const addBinding = () => {
-  const id = Date.now()
-  bindings.value.push({ id, contextType: 'IQC', materialId: 'M007', supplierId: 'S02', triggerCondition: 'ALWAYS', triggerValue: null, priority: 10 })
-}
-const removeBinding = (id: number) => { bindings.value = bindings.value.filter(r => r.id !== id) }
+  // --- 不良现象绑定 ---
+  const phenomenonMaps = ref < any[] > ([])
+  const phenomenonColumns = [
+    { title: '检验项目', dataIndex: 'itemName', key: 'itemName', width: 150 },
+    { title: '不良现象', dataIndex: 'phenomenonName', key: 'phenomenonName', width: 200 },
+    { title: '不良分类', dataIndex: 'categoryName', key: 'categoryName', width: 120 },
+    { title: '操作', key: 'action', width: 80 }
+  ]
 
-const addDetail = () => {
-  const id = Date.now()
-  details.value.push({ id, itemId: 101, itemName: '壳体A面平面度', sequence: 10, samplingRuleId: 10, characteristicClass: 'CC', methodId: 201, instrumentTypeId: 301, isLabTestRequired: false, frequencyType: 'PER_TIME', frequencyValue: 2, frequencyUnit: 'HOURS', isSpcRequired: true, attachmentId: '' })
-}
-const removeDetail = (id: number) => { details.value = details.value.filter(r => r.id !== id) }
+  // --- 物料检验规格 ---
+  const materialSpecs = ref < any[] > ([])
+  const materialSpecColumns = [
+    { title: '物料编码', dataIndex: 'materialCode', key: 'materialCode', width: 120 },
+    { title: '检验项目', dataIndex: 'inspItemName', key: 'inspItemName', width: 120 },
+    { title: '数据类型', dataIndex: 'dataType', key: 'dataType', width: 100 },
+    { title: '目标值', dataIndex: 'targetValue', key: 'targetValue', width: 80 },
+    { title: '上限', dataIndex: 'upperLimit', key: 'upperLimit', width: 80 },
+    { title: '下限', dataIndex: 'lowerLimit', key: 'lowerLimit', width: 80 },
+    { title: '单位', dataIndex: 'uom', key: 'uom', width: 60 },
+    { title: '操作', key: 'action', width: 120 }
+  ]
 
-const addPhenomenonMap = () => {
-  const id = Date.now()
-  phenomenonMaps.value.push({ id, planDetailId: 701, phenomenonId: 401 })
-}
-const removePhenomenonMap = (id: number) => { phenomenonMaps.value = phenomenonMaps.value.filter(r => r.id !== id) }
-
-const addMaterialSpec = () => {
-  const id = Date.now()
-  materialSpecs.value.push({ id, materialId: 'M007', inspItemId: 701, dataType: 'QUANTITATIVE', targetValue: 50.0, upperLimit: 50.02, lowerLimit: 49.98, uom: 'mm', standardText: '', standardCode: '', expectedValue: '', attachmentId: '' })
-}
-const removeMaterialSpec = (id: number) => { materialSpecs.value = materialSpecs.value.filter(r => r.id !== id) }
-
-const handleBack = () => { router.push('/inspection-model/insp-plans') }
-
-const handleSave = async () => {
-  try {
-    saving.value = true
-    await formRef.value?.validate()
-    message.success('保存成功')
+  // --- 操作方法 ---
+  const handleBack = () => {
     router.push('/inspection-model/insp-plans')
-  } catch (e) {
-    message.error('请完善必填项')
-  } finally {
-    saving.value = false
   }
-}
 
-onMounted(() => {
-  const id = route.params.id as string | undefined
-  if (id) {
-    Object.assign(form, { orgId: 1, planCode: 'IP-HFC-CASTING', planname: '合肥工厂-压铸件通用方案', version: 'V1.0', status: 'APPROVED', workflowInstanceId: 1001 })
-    bindings.value = [{ id: 801, contextType: 'IQC', materialId: 'M007', supplierId: 'S02', triggerCondition: 'ALWAYS', triggerValue: null, priority: 10 }]
-    details.value = [{ id: 701, itemId: 101, itemName: '壳体A面平面度', sequence: 10, samplingRuleId: 10, characteristicClass: 'CC', methodId: 201, instrumentTypeId: 301, isLabTestRequired: false, frequencyType: 'PER_TIME', frequencyValue: 2, frequencyUnit: 'HOURS', isSpcRequired: true, attachmentId: '' }]
-    phenomenonMaps.value = [{ id: 1, planDetailId: 701, phenomenonId: 401 }]
-    materialSpecs.value = [{ id: 901, materialId: 'M007', inspItemId: 701, dataType: 'QUANTITATIVE', targetValue: 50.0, upperLimit: 50.02, lowerLimit: 49.98, uom: 'mm', standardText: '', standardCode: '', expectedValue: '', attachmentId: '' }]
+  const handleSave = async () => {
+    try {
+      saving.value = true
+      await formRef.value?.validate()
+      message.success('保存成功')
+      router.push('/inspection-model/insp-plans')
+    } catch (e) {
+      message.error('请完善必填项')
+    } finally {
+      saving.value = false
+    }
   }
-})
+
+  // 绑定操作
+  const handleAddBinding = () => {
+    bindings.value.push({
+      id: Date.now().toString(),
+      contextType: 'IQC',
+      materialCode: 'M001',
+      materialName: '铝锭',
+      supplierName: '供应商A',
+      operationName: '',
+      priority: 10
+    })
+    message.success('已添加绑定')
+  }
+
+  const handleEditBinding = (record: any) => {
+    message.info('编辑绑定: ' + record.id)
+  }
+
+  const handleRemoveBinding = (record: any) => {
+    bindings.value = bindings.value.filter(i => i.id !== record.id)
+    message.success('已删除绑定')
+  }
+
+  // 明细操作
+  const handleAddDetail = () => {
+    details.value.push({
+      id: Date.now().toString(),
+      itemName: '长度',
+      samplingRuleName: 'AQL 0.65 Level II',
+      methodName: '卡尺测量',
+      instrumentName: '游标卡尺',
+      isLabTestRequired: false,
+      isSpcRequired: true
+    })
+    message.success('已添加明细')
+  }
+
+  const handleEditDetail = (record: any) => {
+    message.info('编辑明细: ' + record.id)
+  }
+
+  const handleRemoveDetail = (record: any) => {
+    details.value = details.value.filter(i => i.id !== record.id)
+    message.success('已删除明细')
+  }
+
+  // 不良现象绑定操作
+  const handleAddPhenomenonMap = () => {
+    phenomenonMaps.value.push({
+      id: Date.now().toString(),
+      itemName: '长度',
+      phenomenonName: '尺寸超差',
+      categoryName: '尺寸类'
+    })
+    message.success('已添加不良现象绑定')
+  }
+
+  const handleRemovePhenomenonMap = (record: any) => {
+    phenomenonMaps.value = phenomenonMaps.value.filter(i => i.id !== record.id)
+    message.success('已删除不良现象绑定')
+  }
+
+  // 物料规格操作
+  const handleAddMaterialSpec = () => {
+    materialSpecs.value.push({
+      id: Date.now().toString(),
+      materialCode: 'M001',
+      inspItemName: '长度',
+      dataType: 'QUANTITATIVE',
+      targetValue: 100,
+      upperLimit: 101,
+      lowerLimit: 99,
+      uom: 'mm'
+    })
+    message.success('已添加物料规格')
+  }
+
+  const handleEditMaterialSpec = (record: any) => {
+    message.info('编辑物料规格: ' + record.id)
+  }
+
+  const handleRemoveMaterialSpec = (record: any) => {
+    materialSpecs.value = materialSpecs.value.filter(i => i.id !== record.id)
+    message.success('已删除物料规格')
+  }
+
+  // 加载数据
+  onMounted(() => {
+    const id = route.params.id as string | undefined
+    if (id) {
+      // 模拟加载数据
+      Object.assign(form, {
+        id,
+        planCode: 'IP-HFC-CASTING',
+        planName: '合肥工厂-压铸件通用方案',
+        version: 'V1.0',
+        status: 'APPROVED',
+        inspType: 'IPQC',
+        templateId: '2',
+        remark: '用于压铸件过程检验'
+      })
+      bindings.value = [
+        { id: '801', contextType: 'IPQC', materialCode: 'M007', materialName: '压铸件壳体', supplierName: '', operationName: '压铸工序', priority: 10 }
+      ]
+      details.value = [
+        { id: '701', itemName: '壳体A面平面度', samplingRuleName: 'AQL 0.65', methodName: '三坐标测量', instrumentName: '三坐标测量机', isLabTestRequired: false, isSpcRequired: true }
+      ]
+      phenomenonMaps.value = [
+        { id: '1', itemName: '壳体A面平面度', phenomenonName: '平面度超差', categoryName: '尺寸类' }
+      ]
+      materialSpecs.value = [
+        { id: '901', materialCode: 'M007', inspItemName: '壳体A面平面度', dataType: 'QUANTITATIVE', targetValue: 0.05, upperLimit: 0.08, lowerLimit: 0, uom: 'mm' }
+      ]
+    }
+  })
 </script>
 
 <style scoped>
-.page-container { padding:24px; background:#f5f5f5; min-height:calc(100vh - 60px) }
-.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px }
-.header-left { display:flex; align-items:center; gap:8px }
-.back-button { padding:0 }
-.page-title { margin:0; font-size:18px; font-weight:600 }
-.form-card :deep(.ant-card-body) { padding:16px }
-@media (max-width:768px){ .page-container{ padding:8px } }
-</style>
+  .page-container {
+    padding: 24px;
+    background: #f0f2f5;
+    min-height: calc(100vh - 64px);
+  }
 
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    background: #fff;
+    padding: 16px;
+    border-radius: 4px;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .back-button {
+    padding: 0;
+  }
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .page-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .form-card {
+    margin-bottom: 16px;
+  }
+
+  .tab-card {
+    margin-bottom: 16px;
+  }
+
+  .tab-toolbar {
+    margin-bottom: 12px;
+  }
+</style>

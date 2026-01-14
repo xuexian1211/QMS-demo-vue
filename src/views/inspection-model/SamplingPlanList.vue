@@ -45,6 +45,7 @@
               <div class="plan-desc">{{ plan.description || '无描述' }}</div>
 
               <div class="plan-actions">
+                <EyeOutlined class="action-icon" @click.stop="handleViewPlan(plan)" />
                 <EditOutlined class="action-icon" @click.stop="handleEditPlan(plan)" />
                 <DeleteOutlined class="action-icon" @click.stop="handleDeletePlan(plan)" />
               </div>
@@ -126,19 +127,71 @@
         <a-form-item label="描述"><a-textarea v-model:value="planForm.description" /></a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 规则详情/编辑弹窗 -->
+    <a-modal v-model:visible="ruleModalVisible" :title="isEditRule ? '编辑规则' : '规则详情'" width="700px" @ok="saveRule">
+      <a-form layout="vertical" :model="ruleForm">
+        <a-row :gutter="16">
+          <a-col :span="12">
+            <a-form-item label="规则代码" required>
+              <a-input v-model:value="ruleForm.ruleCode" :disabled="!isEditRule" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="规则名称" required>
+              <a-input v-model:value="ruleForm.ruleName" :disabled="!isEditRule" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="16">
+          <a-col :span="8">
+            <a-form-item label="检验水平">
+              <a-select v-model:value="ruleForm.inspectionLevel" :disabled="!isEditRule">
+                <a-select-option value="I">I</a-select-option>
+                <a-select-option value="II">II</a-select-option>
+                <a-select-option value="III">III</a-select-option>
+                <a-select-option value="S1">S1</a-select-option>
+                <a-select-option value="S2">S2</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
+            <a-form-item label="检验类型">
+              <a-select v-model:value="ruleForm.inspectionType" :disabled="!isEditRule">
+                <a-select-option value="NORMAL">正常检验</a-select-option>
+                <a-select-option value="STRICT">加严检验</a-select-option>
+                <a-select-option value="REDUCED">放宽检验</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
+            <a-form-item label="AQL值">
+              <a-input-number v-model:value="ruleForm.aqlValue" :disabled="!isEditRule" :min="0" :step="0.1"
+                style="width: 100%" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-divider>抽样明细</a-divider>
+        <a-table :columns="detailColumns" :data-source="ruleForm.details" :pagination="false" size="small" bordered />
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ref, reactive, computed, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
   import { message, Modal } from 'ant-design-vue'
   import {
     PlusOutlined,
     ReloadOutlined,
     SearchOutlined,
     EditOutlined,
-    DeleteOutlined
+    DeleteOutlined,
+    EyeOutlined
   } from '@ant-design/icons-vue'
+
+  const router = useRouter()
 
   // --- 状态定义 ---
   const plansLoading = ref(false)
@@ -191,15 +244,15 @@
   }
 
   const handleCreatePlan = () => {
-    isEditPlan.value = false
-    Object.assign(planForm, { id: null, planCode: '', planName: '', samplingMethod: 'STANDARD_BASED', description: '' })
-    planModalVisible.value = true
+    router.push('/inspection-model/sampling-plans/create')
+  }
+
+  const handleViewPlan = (plan: any) => {
+    router.push(`/inspection-model/sampling-plans/view/${plan.id}`)
   }
 
   const handleEditPlan = (plan: any) => {
-    isEditPlan.value = true
-    Object.assign(planForm, { ...plan })
-    planModalVisible.value = true
+    router.push(`/inspection-model/sampling-plans/edit/${plan.id}`)
   }
 
   const handleDeletePlan = (plan: any) => {
@@ -315,8 +368,29 @@
     })
   }
 
+  const ruleModalVisible = ref(false)
+  const isEditRule = ref(false)
+  const ruleForm = reactive < any > ({ id: null, ruleCode: '', ruleName: '', inspectionLevel: 'II', inspectionType: 'NORMAL', aqlValue: 1.0, details: [] })
+
   const handleEditRule = (record: any) => {
-    message.info(`编辑规则: ${record.ruleName}`)
+    isEditRule.value = true
+    Object.assign(ruleForm, { ...record, details: [...(record.details || [])] })
+    ruleModalVisible.value = true
+  }
+
+  const handleViewRule = (record: any) => {
+    isEditRule.value = false
+    Object.assign(ruleForm, { ...record, details: [...(record.details || [])] })
+    ruleModalVisible.value = true
+  }
+
+  const saveRule = () => {
+    if (isEditRule.value) {
+      const idx = rulesData.value.findIndex(r => r.id === ruleForm.id)
+      if (idx !== -1) Object.assign(rulesData.value[idx], { ...ruleForm, details: [...ruleForm.details] })
+      message.success('规则已更新')
+    }
+    ruleModalVisible.value = false
   }
 
   const handleDeleteRule = (record: any) => {
