@@ -31,23 +31,67 @@
         </div>
 
         <a-card class="search-card" :bordered="false">
-            <a-form layout="inline" :model="queryParam">
-                <a-form-item label="项目编码">
-                    <a-input v-model:value="queryParam.code" placeholder="请输入" allow-clear />
-                </a-form-item>
-                <a-form-item label="项目名称">
-                    <a-input v-model:value="queryParam.name" placeholder="请输入" allow-clear />
-                </a-form-item>
-                <a-form-item label="数据类型">
-                    <a-select v-model:value="queryParam.dataType" style="width: 150px" allow-clear placeholder="请选择">
-                        <a-select-option value="Quantitative">计量型</a-select-option>
-                        <a-select-option value="Qualitative">计数型</a-select-option>
-                    </a-select>
-                </a-form-item>
-                <a-form-item>
-                    <a-button type="primary" @click="handleSearch">查询</a-button>
-                    <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
-                </a-form-item>
+            <a-form :model="queryParam" :label-col="{ span: 24 }" :wrapper-col="{ span: 24 }">
+                <a-row :gutter="16">
+                    <a-col :span="6">
+                        <a-form-item label="项目编码">
+                            <a-input v-model:value="queryParam.code" placeholder="请输入" allow-clear />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-form-item label="项目名称">
+                            <a-input v-model:value="queryParam.name" placeholder="请输入" allow-clear />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-form-item label="数据类型">
+                            <a-select v-model:value="queryParam.dataType" style="width: 100%" allow-clear
+                                placeholder="请选择">
+                                <a-select-option value="Quantitative">计量型</a-select-option>
+                                <a-select-option value="Qualitative">计数型</a-select-option>
+                            </a-select>
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-form-item label=" " :colon="false">
+                            <a-space>
+                                <a-button type="primary" @click="handleSearch">查询</a-button>
+                                <a-button @click="handleReset">重置</a-button>
+                                <a @click="searchExpanded = !searchExpanded" style="line-height: 32px;">
+                                    {{ searchExpanded ? '收起' : '展开' }}
+                                    <DownOutlined v-if="!searchExpanded" />
+                                    <UpOutlined v-else />
+                                </a>
+                            </a-space>
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+                <a-row :gutter="16" v-show="searchExpanded">
+                    <a-col :span="6">
+                        <a-form-item label="检验方法">
+                            <a-input v-model:value="queryParam.method" placeholder="请输入" allow-clear />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-form-item label="单位">
+                            <a-input v-model:value="queryParam.unit" placeholder="请输入" allow-clear />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-form-item label="创建时间">
+                            <a-range-picker v-model:value="queryParam.createTimeRange" style="width: 100%" />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-form-item label="状态">
+                            <a-select v-model:value="queryParam.status" style="width: 100%" allow-clear
+                                placeholder="请选择">
+                                <a-select-option value="1">启用</a-select-option>
+                                <a-select-option value="0">禁用</a-select-option>
+                            </a-select>
+                        </a-form-item>
+                    </a-col>
+                </a-row>
             </a-form>
         </a-card>
 
@@ -162,7 +206,7 @@
     import { message, Modal } from 'ant-design-vue'
     import {
         PlusOutlined, EditOutlined, DeleteOutlined,
-        ExportOutlined, ReloadOutlined
+        ExportOutlined, ReloadOutlined, DownOutlined, UpOutlined
     } from '@ant-design/icons-vue'
     import { useExport } from '@/utils/excel'
 
@@ -170,12 +214,17 @@
 
     // --- Search & Table ---
     const loading = ref(false)
+    const searchExpanded = ref(false)
     const tableData = ref < any[] > ([])
     const selectedRowKeys = ref < string[] > ([])
     const queryParam = reactive({
         code: '',
         name: '',
-        dataType: undefined
+        dataType: undefined,
+        method: '',
+        unit: '',
+        createTimeRange: undefined,
+        status: undefined
     })
 
     const pagination = reactive({
@@ -261,17 +310,17 @@
     }
 
     const handleAdd = () => {
-        router.push('/inspection-model/insp-items/create')
+        router.push('/inspection-model/inspection-items/create')
     }
 
     const handleView = (record: any) => {
-        router.push(`/inspection-model/insp-items/view/${record.id}`)
+        router.push(`/inspection-model/inspection-items/view/${record.id}`)
     }
 
     const handleEdit = (record: any) => {
         const item = record.id ? record : tableData.value.find(i => i.id === selectedRowKeys.value[0])
         if (!item) return
-        router.push(`/inspection-model/insp-items/edit/${item.id}`)
+        router.push(`/inspection-model/inspection-items/edit/${item.id}`)
     }
 
     const handleDelete = (record: any) => {

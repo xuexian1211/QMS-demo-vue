@@ -113,26 +113,26 @@
       </a-table>
     </div>
 
-    <!-- 新增/编辑模态框 -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="1000px" @ok="handleSubmit"
-      @cancel="handleCancel">
+    <!-- 新增/编辑/查看模态框 -->
+    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="1000px" @ok="handleSubmit" @cancel="handleCancel"
+      :footer="isView ? null : undefined">
       <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="供应商编码" name="supplierCode">
-              <a-input v-model:value="formData.supplierCode" placeholder="请输入供应商编码" />
+              <a-input v-model:value="formData.supplierCode" placeholder="请输入供应商编码" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="供应商名称" name="supplierName">
-              <a-input v-model:value="formData.supplierName" placeholder="请输入供应商名称" />
+              <a-input v-model:value="formData.supplierName" placeholder="请输入供应商名称" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="8">
             <a-form-item label="供应商等级" name="supplierLevel">
-              <a-select v-model:value="formData.supplierLevel" placeholder="请选择供应商等级">
+              <a-select v-model:value="formData.supplierLevel" placeholder="请选择供应商等级" :disabled="isView">
                 <a-select-option value="A">A级供应商</a-select-option>
                 <a-select-option value="B">B级供应商</a-select-option>
                 <a-select-option value="C">C级供应商</a-select-option>
@@ -141,7 +141,7 @@
           </a-col>
           <a-col :span="8">
             <a-form-item label="供应类型" name="supplyType">
-              <a-select v-model:value="formData.supplyType" placeholder="请选择供应类型">
+              <a-select v-model:value="formData.supplyType" placeholder="请选择供应类型" :disabled="isView">
                 <a-select-option value="raw_material">原材料</a-select-option>
                 <a-select-option value="equipment">设备</a-select-option>
                 <a-select-option value="service">服务</a-select-option>
@@ -151,14 +151,14 @@
           </a-col>
           <a-col :span="8">
             <a-form-item label="信用等级" name="creditLevel">
-              <a-rate v-model:value="formData.creditLevel" allow-half />
+              <a-rate v-model:value="formData.creditLevel" allow-half :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="状态" name="status">
-              <a-radio-group v-model:value="formData.status">
+              <a-radio-group v-model:value="formData.status" :disabled="isView">
                 <a-radio value="1">启用</a-radio>
                 <a-radio value="0">禁用</a-radio>
               </a-radio-group>
@@ -167,7 +167,7 @@
           <a-col :span="12">
             <a-form-item label="合作年限" name="cooperationYears">
               <a-input-number v-model:value="formData.cooperationYears" placeholder="请输入" :min="0" :max="50"
-                style="width: 100%" />
+                style="width: 100%" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -176,46 +176,46 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="统一社会信用代码" name="creditCode">
-              <a-input v-model:value="formData.creditCode" placeholder="请输入统一社会信用代码" />
+              <a-input v-model:value="formData.creditCode" placeholder="请输入统一社会信用代码" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="法定代表人" name="legalPerson">
-              <a-input v-model:value="formData.legalPerson" placeholder="请输入法定代表人" />
+              <a-input v-model:value="formData.legalPerson" placeholder="请输入法定代表人" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="联系电话" name="phone">
-              <a-input v-model:value="formData.phone" placeholder="请输入联系电话" />
+              <a-input v-model:value="formData.phone" placeholder="请输入联系电话" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="邮箱地址" name="email">
-              <a-input v-model:value="formData.email" placeholder="请输入邮箱地址" />
+              <a-input v-model:value="formData.email" placeholder="请输入邮箱地址" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-form-item label="详细地址" name="address">
-          <a-textarea v-model:value="formData.address" placeholder="请输入详细地址" :rows="2" />
+          <a-textarea v-model:value="formData.address" placeholder="请输入详细地址" :rows="2" :disabled="isView" />
         </a-form-item>
 
         <a-divider>其他信息</a-divider>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="开户银行" name="bankName">
-              <a-input v-model:value="formData.bankName" placeholder="请输入开户银行" />
+              <a-input v-model:value="formData.bankName" placeholder="请输入开户银行" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="银行账号" name="bankAccount">
-              <a-input v-model:value="formData.bankAccount" placeholder="请输入银行账号" />
+              <a-input v-model:value="formData.bankAccount" placeholder="请输入银行账号" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-form-item label="备注" name="remark">
-          <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="3" />
+          <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="3" :disabled="isView" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -276,6 +276,7 @@
   const modalVisible = ref(false)
   const viewModalVisible = ref(false)
   const isEdit = ref(false)
+  const isView = ref(false)
   const formRef = ref()
   const selectedRowKeys = ref([])
 
@@ -372,7 +373,10 @@
   }
 
   // 计算属性
-  const modalTitle = computed(() => isEdit.value ? '编辑供应商档案' : '新增供应商档案')
+  const modalTitle = computed(() => {
+    if (isView.value) return '查看供应商档案'
+    return isEdit.value ? '编辑供应商档案' : '新增供应商档案'
+  })
 
   // 选择变更
   const onSelectChange = (keys) => {
@@ -409,13 +413,16 @@
 
   const handleEdit = (record) => {
     isEdit.value = true
+    isView.value = false
     modalVisible.value = true
     Object.assign(formData, { ...record })
   }
 
   const handleView = (record) => {
-    viewData.value = record
-    viewModalVisible.value = true
+    isEdit.value = true
+    isView.value = true
+    Object.assign(formData, { ...record })
+    modalVisible.value = true
   }
 
   const handleDelete = (record) => {

@@ -85,27 +85,29 @@
       </a-table>
     </div>
 
-    <!-- 新增/编辑模态框 -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="600px" @ok="handleSubmit" @cancel="handleCancel">
+    <!-- 新增/编辑/查看模态框 -->
+    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="600px" @ok="handleSubmit" @cancel="handleCancel"
+      :footer="isView ? null : undefined">
       <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
         <a-form-item label="分类名称" name="categoryName">
-          <a-input v-model:value="formData.categoryName" placeholder="请输入分类名称" />
+          <a-input v-model:value="formData.categoryName" placeholder="请输入分类名称" :disabled="isView" />
         </a-form-item>
         <a-form-item label="分类编码" name="categoryCode">
-          <a-input v-model:value="formData.categoryCode" placeholder="请输入分类编码" />
+          <a-input v-model:value="formData.categoryCode" placeholder="请输入分类编码" :disabled="isView" />
         </a-form-item>
         <a-form-item label="上级分类" name="parentId">
           <a-tree-select v-model:value="formData.parentId" :tree-data="categoryTreeData" placeholder="请选择上级分类"
-            allow-clear tree-default-expand-all />
+            allow-clear tree-default-expand-all :disabled="isView" />
         </a-form-item>
         <a-form-item label="排序" name="sortOrder">
-          <a-input-number v-model:value="formData.sortOrder" placeholder="请输入排序号" :min="0" style="width: 100%" />
+          <a-input-number v-model:value="formData.sortOrder" placeholder="请输入排序号" :min="0" style="width: 100%"
+            :disabled="isView" />
         </a-form-item>
         <a-form-item label="描述" name="description">
-          <a-textarea v-model:value="formData.description" placeholder="请输入分类描述" :rows="3" />
+          <a-textarea v-model:value="formData.description" placeholder="请输入分类描述" :rows="3" :disabled="isView" />
         </a-form-item>
         <a-form-item label="状态" name="status">
-          <a-radio-group v-model:value="formData.status">
+          <a-radio-group v-model:value="formData.status" :disabled="isView">
             <a-radio value="1">启用</a-radio>
             <a-radio value="0">禁用</a-radio>
           </a-radio-group>
@@ -151,6 +153,7 @@
   const modalVisible = ref(false)
   const viewModalVisible = ref(false)
   const isEdit = ref(false)
+  const isView = ref(false)
   const formRef = ref()
   const selectedRowKeys = ref([])
 
@@ -250,7 +253,10 @@
   }
 
   // 计算属性
-  const modalTitle = computed(() => isEdit.value ? '编辑分类' : '新增分类')
+  const modalTitle = computed(() => {
+    if (isView.value) return '查看分类'
+    return isEdit.value ? '编辑分类' : '新增分类'
+  })
 
   // 选择变更
   const onSelectChange = (keys) => {
@@ -287,13 +293,16 @@
 
   const handleEdit = (record) => {
     isEdit.value = true
+    isView.value = false
     modalVisible.value = true
     Object.assign(formData, { ...record, parentId: record.parentId })
   }
 
   const handleView = (record) => {
-    viewData.value = record
-    viewModalVisible.value = true
+    isEdit.value = true
+    isView.value = true
+    Object.assign(formData, { ...record, parentId: record.parentId })
+    modalVisible.value = true
   }
 
   const handleDelete = (record) => {

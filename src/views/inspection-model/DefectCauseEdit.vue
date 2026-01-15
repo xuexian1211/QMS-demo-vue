@@ -120,6 +120,20 @@
                 </a-tab-pane>
             </a-tabs>
         </a-card>
+
+        <!-- 不良现象选择器弹窗 -->
+        <a-modal v-model:visible="phenomenonSelectorVisible" title="选择不良现象" width="800px"
+            @ok="confirmPhenomenonSelection">
+            <a-table :columns="selectorPhenomenonColumns" :data-source="availablePhenomena" :loading="phenomenonLoading"
+                row-key="id" size="small"
+                :row-selection="{ selectedRowKeys: selectedPhenomenonKeys, onChange: onPhenomenonSelectChange }">
+                <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'severity'">
+                        <a-tag :color="getPhenomenonSeverityColor(record.severity)">{{ record.severity }}</a-tag>
+                    </template>
+                </template>
+            </a-table>
+        </a-modal>
     </div>
 </template>
 
@@ -218,9 +232,43 @@
         }
     }
 
+    // 不良现象选择器
+    const phenomenonSelectorVisible = ref(false)
+    const phenomenonLoading = ref(false)
+    const availablePhenomena = ref < any[] > ([])
+    const selectedPhenomenonKeys = ref < string[] > ([])
+    const allPhenomena = ref < any[] > ([])
+
+    const selectorPhenomenonColumns = [
+        { title: '现象代码', dataIndex: 'code', key: 'code', width: 100 },
+        { title: '现象名称', dataIndex: 'name', key: 'name', width: 150 },
+        { title: '严重等级', key: 'severity', width: 80 },
+        { title: '描述', dataIndex: 'description', key: 'description' }
+    ]
+
     const handleAddPhenomenon = () => {
-        message.info('不良现象选择器功能将在后续实现')
+        phenomenonLoading.value = true
+        setTimeout(() => {
+            // 过滤已关联的
+            const existingIds = form.relatedPhenomena.map(p => p.id)
+            availablePhenomena.value = allPhenomena.value.filter(p => !existingIds.includes(p.id))
+            selectedPhenomenonKeys.value = []
+            phenomenonLoading.value = false
+        }, 200)
+        phenomenonSelectorVisible.value = true
     }
+
+    const onPhenomenonSelectChange = (keys: string[]) => {
+        selectedPhenomenonKeys.value = keys
+    }
+
+    const confirmPhenomenonSelection = () => {
+        const newPhenomena = allPhenomena.value.filter(p => selectedPhenomenonKeys.value.includes(p.id))
+        form.relatedPhenomena.push(...newPhenomena)
+        phenomenonSelectorVisible.value = false
+        message.success(`已添加 ${newPhenomena.length} 个不良现象`)
+    }
+
     const handleRemovePhenomenon = (index: number) => {
         form.relatedPhenomena.splice(index, 1)
     }
@@ -281,6 +329,15 @@
 
     onMounted(() => {
         loadData()
+        // 加载所有可用的不良现象
+        allPhenomena.value = [
+            { id: '101', code: 'DEF-001', name: '表面划伤', severity: 'MI', description: '可见划痕' },
+            { id: '102', code: 'DEF-002', name: '气孔', severity: 'MA', description: '表面密集气孔' },
+            { id: '103', code: 'DEF-003', name: '裂纹', severity: 'CR', description: '产品裂纹' },
+            { id: '104', code: 'DEF-004', name: '变形', severity: 'MA', description: '产品变形' },
+            { id: '105', code: 'DEF-005', name: '色差', severity: 'MI', description: '颜色不均匀' },
+            { id: '106', code: 'DEF-006', name: '尺寸偏差', severity: 'MA', description: '超出公差范围' }
+        ]
     })
 </script>
 

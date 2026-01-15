@@ -118,24 +118,60 @@
 
     <!-- 现象编辑弹窗 -->
     <a-modal v-model:visible="phenomenonModalVisible" :title="isEditPhenomenon ? '编辑不良现象' : '新增不良现象'"
-      @ok="savePhenomenon">
-      <a-form layout="vertical" :model="phenomenonForm">
-        <a-form-item label="所属分类">
-          <a-input :value="selectedCategory?.categoryName" disabled />
-        </a-form-item>
-        <a-form-item label="现象代码" required><a-input v-model:value="phenomenonForm.code" /></a-form-item>
-        <a-form-item label="现象名称" required><a-input v-model:value="phenomenonForm.name" /></a-form-item>
-        <a-form-item label="严重等级" required>
-          <a-select v-model:value="phenomenonForm.severity">
-            <a-select-option value="CR">致命 (CR)</a-select-option>
-            <a-select-option value="MA">主要 (MA)</a-select-option>
-            <a-select-option value="MI">次要 (MI)</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="适用工序"><a-input v-model:value="phenomenonForm.processType"
-            placeholder="如：压铸, 机加工" /></a-form-item>
-        <a-form-item label="描述"><a-textarea v-model:value="phenomenonForm.description" /></a-form-item>
-      </a-form>
+      @ok="savePhenomenon" width="900px">
+      <a-tabs>
+        <a-tab-pane key="basic" tab="基本信息">
+          <a-form layout="vertical" :model="phenomenonForm">
+            <a-form-item label="所属分类">
+              <a-input :value="selectedCategory?.categoryName" disabled />
+            </a-form-item>
+            <a-form-item label="现象代码" required><a-input v-model:value="phenomenonForm.code" /></a-form-item>
+            <a-form-item label="现象名称" required><a-input v-model:value="phenomenonForm.name" /></a-form-item>
+            <a-form-item label="严重等级" required>
+              <a-select v-model:value="phenomenonForm.severity">
+                <a-select-option value="CR">致命 (CR)</a-select-option>
+                <a-select-option value="MA">主要 (MA)</a-select-option>
+                <a-select-option value="MI">次要 (MI)</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="适用工序"><a-input v-model:value="phenomenonForm.processType"
+                placeholder="如：压铸, 机加工" /></a-form-item>
+            <a-form-item label="描述"><a-textarea v-model:value="phenomenonForm.description" /></a-form-item>
+          </a-form>
+        </a-tab-pane>
+        <a-tab-pane key="causes" tab="关联原因">
+          <div style="margin-bottom: 12px;">
+            <a-button type="primary" size="small" @click="handleAddCauseToPhenomenon">
+              <PlusOutlined /> 添加关联原因
+            </a-button>
+          </div>
+          <a-table :columns="phenomenonCauseColumns" :data-source="phenomenonForm.relatedCauses || []" row-key="id"
+            size="small" :pagination="false">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'causeType'">
+                <a-tag :color="getCauseTypeColor(record.causeType)">{{ getCauseTypeText(record.causeType) }}</a-tag>
+              </template>
+              <template v-else-if="column.key === 'action'">
+                <a-button type="link" danger size="small" @click="handleRemoveCauseFromPhenomenon(index)">移除</a-button>
+              </template>
+            </template>
+          </a-table>
+          <a-empty v-if="!phenomenonForm.relatedCauses || phenomenonForm.relatedCauses.length === 0"
+            description="暂无关联原因" />
+        </a-tab-pane>
+      </a-tabs>
+    </a-modal>
+
+    <!-- 原因选择器弹窗 -->
+    <a-modal v-model:visible="causeSelectVisible" title="选择不良原因" width="800px" @ok="confirmCauseSelection">
+      <a-table :columns="selectorCauseColumns" :data-source="availableCauses" :loading="causeLoading" row-key="id"
+        size="small" :row-selection="{ selectedRowKeys: selectedCauseKeys, onChange: onCauseSelectChange }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'causeType'">
+            <a-tag :color="getCauseTypeColor(record.causeType)">{{ getCauseTypeText(record.causeType) }}</a-tag>
+          </template>
+        </template>
+      </a-table>
     </a-modal>
   </div>
 </template>
@@ -392,6 +428,75 @@
     message.success('导出成功')
   }
 
+  // --- 关联原因逻辑 ---
+  const causeSelectVisible = ref(false)
+  const causeLoading = ref(false)
+  const availableCauses = ref < any[] > ([])
+  const selectedCauseKeys = ref < string[] > ([])
+  const allCauses = ref < any[] > ([])
+
+  const phenomenonCauseColumns = [
+    { title: '原因代码', dataIndex: 'causeCode', key: 'causeCode', width: 120 },
+    { title: '原因名称', dataIndex: 'causeName', key: 'causeName', width: 150 },
+    { title: '原因类别', key: 'causeType', width: 100 },
+    { title: '描述', dataIndex: 'description', key: 'description' },
+    { title: '操作', key: 'action', width: 80 }
+  ]
+
+  const selectorCauseColumns = [
+    { title: '原因代码', dataIndex: 'causeCode', key: 'causeCode', width: 100 },
+    { title: '原因名称', dataIndex: 'causeName', key: 'causeName', width: 150 },
+    { title: '原因类别', key: 'causeType', width: 80 },
+    { title: '描述', dataIndex: 'description', key: 'description' }
+  ]
+
+  const getCauseTypeColor = (type: string) => {
+    const map: Record<string, string> = {
+      Man: 'blue', Machine: 'cyan', Material: 'orange',
+      Method: 'purple', Environment: 'green'
+    }
+    return map[type] || 'default'
+  }
+
+  const getCauseTypeText = (type: string) => {
+    const map: Record<string, string> = {
+      Man: '人', Machine: '机', Material: '料',
+      Method: '法', Environment: '环'
+    }
+    return map[type] || type
+  }
+
+  const handleAddCauseToPhenomenon = () => {
+    causeLoading.value = true
+    setTimeout(() => {
+      const existingIds = (phenomenonForm.relatedCauses || []).map((c: any) => c.id)
+      availableCauses.value = allCauses.value.filter(c => !existingIds.includes(c.id))
+      selectedCauseKeys.value = []
+      causeLoading.value = false
+    }, 200)
+    causeSelectVisible.value = true
+  }
+
+  const onCauseSelectChange = (keys: string[]) => {
+    selectedCauseKeys.value = keys
+  }
+
+  const confirmCauseSelection = () => {
+    const newCauses = allCauses.value.filter(c => selectedCauseKeys.value.includes(c.id))
+    if (!phenomenonForm.relatedCauses) {
+      phenomenonForm.relatedCauses = []
+    }
+    phenomenonForm.relatedCauses.push(...newCauses)
+    causeSelectVisible.value = false
+    message.success(`已添加 ${newCauses.length} 个不良原因`)
+  }
+
+  const handleRemoveCauseFromPhenomenon = (index: number) => {
+    if (phenomenonForm.relatedCauses) {
+      phenomenonForm.relatedCauses.splice(index, 1)
+    }
+  }
+
   const getSeverityColor = (level: string) => {
     switch (level) {
       case 'CR': return 'red'
@@ -403,6 +508,14 @@
 
   onMounted(() => {
     loadCategories()
+    // 加载所有可用的不良原因
+    allCauses.value = [
+      { id: '1', causeCode: 'C-MAN-001', causeName: '操作不当', causeType: 'Man', description: '员工未按SOP操作' },
+      { id: '2', causeCode: 'C-MAC-001', causeName: '设备故障', causeType: 'Machine', description: '主轴跳动过大' },
+      { id: '3', causeCode: 'C-MAT-001', causeName: '原料杂质', causeType: 'Material', description: '供应商来料含杂质' },
+      { id: '4', causeCode: 'C-MET-001', causeName: '工艺参数', causeType: 'Method', description: '温度设置不当' },
+      { id: '5', causeCode: 'C-ENV-001', causeName: '环境温度', causeType: 'Environment', description: '车间温度过高' }
+    ]
   })
 </script>
 

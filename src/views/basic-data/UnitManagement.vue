@@ -105,25 +105,26 @@
       </a-table>
     </div>
 
-    <!-- 新增/编辑模态框 -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="600px" @ok="handleSubmit" @cancel="handleCancel">
+    <!-- 新增/编辑/查看模态框 -->
+    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="600px" @ok="handleSubmit" @cancel="handleCancel"
+      :footer="isView ? null : undefined">
       <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="单位编码" name="unitCode">
-              <a-input v-model:value="formData.unitCode" placeholder="请输入单位编码" />
+              <a-input v-model:value="formData.unitCode" placeholder="请输入单位编码" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="单位名称" name="unitName">
-              <a-input v-model:value="formData.unitName" placeholder="请输入单位名称" />
+              <a-input v-model:value="formData.unitName" placeholder="请输入单位名称" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="单位类型" name="unitType">
-              <a-select v-model:value="formData.unitType" placeholder="请选择单位类型">
+              <a-select v-model:value="formData.unitType" placeholder="请选择单位类型" :disabled="isView">
                 <a-select-option value="weight">重量</a-select-option>
                 <a-select-option value="length">长度</a-select-option>
                 <a-select-option value="volume">体积</a-select-option>
@@ -135,7 +136,7 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="换算基准单位" name="baseUnitId">
-              <a-select v-model:value="formData.baseUnitId" placeholder="请选择基准单位" allow-clear>
+              <a-select v-model:value="formData.baseUnitId" placeholder="请选择基准单位" allow-clear :disabled="isView">
                 <a-select-option v-for="unit in baseUnits" :key="unit.id" :value="unit.id">
                   {{ unit.unitName }}
                 </a-select-option>
@@ -147,12 +148,12 @@
           <a-col :span="12">
             <a-form-item label="换算系数" name="conversionFactor">
               <a-input-number v-model:value="formData.conversionFactor" placeholder="请输入换算系数" :min="0" :precision="6"
-                style="width: 100%" />
+                style="width: 100%" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="是否基准单位" name="isBaseUnit">
-              <a-radio-group v-model:value="formData.isBaseUnit">
+              <a-radio-group v-model:value="formData.isBaseUnit" :disabled="isView">
                 <a-radio value="1">是</a-radio>
                 <a-radio value="0">否</a-radio>
               </a-radio-group>
@@ -162,12 +163,13 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="排序" name="sortOrder">
-              <a-input-number v-model:value="formData.sortOrder" placeholder="请输入排序号" :min="0" style="width: 100%" />
+              <a-input-number v-model:value="formData.sortOrder" placeholder="请输入排序号" :min="0" style="width: 100%"
+                :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="状态" name="status">
-              <a-radio-group v-model:value="formData.status">
+              <a-radio-group v-model:value="formData.status" :disabled="isView">
                 <a-radio value="1">启用</a-radio>
                 <a-radio value="0">禁用</a-radio>
               </a-radio-group>
@@ -175,7 +177,7 @@
           </a-col>
         </a-row>
         <a-form-item label="描述" name="description">
-          <a-textarea v-model:value="formData.description" placeholder="请输入单位描述" :rows="3" />
+          <a-textarea v-model:value="formData.description" placeholder="请输入单位描述" :rows="3" :disabled="isView" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -229,6 +231,7 @@
   const modalVisible = ref(false)
   const viewModalVisible = ref(false)
   const isEdit = ref(false)
+  const isView = ref(false)
   const formRef = ref()
   const selectedRowKeys = ref([])
 
@@ -322,7 +325,10 @@
   }
 
   // 计算属性
-  const modalTitle = computed(() => isEdit.value ? '编辑单位' : '新增单位')
+  const modalTitle = computed(() => {
+    if (isView.value) return '查看单位'
+    return isEdit.value ? '编辑单位' : '新增单位'
+  })
 
   // 选择变更
   const onSelectChange = (keys) => {
@@ -359,13 +365,16 @@
 
   const handleEdit = (record) => {
     isEdit.value = true
+    isView.value = false
     modalVisible.value = true
     Object.assign(formData, { ...record })
   }
 
   const handleView = (record) => {
-    viewData.value = record
-    viewModalVisible.value = true
+    isEdit.value = true
+    isView.value = true
+    Object.assign(formData, { ...record })
+    modalVisible.value = true
   }
 
   const handleDelete = (record) => {

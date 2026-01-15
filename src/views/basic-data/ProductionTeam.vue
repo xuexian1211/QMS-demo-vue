@@ -98,25 +98,26 @@
       </a-table>
     </div>
 
-    <!-- 新增/编辑模态框 -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="900px" @ok="handleSubmit" @cancel="handleCancel">
+    <!-- 新增/编辑/查看模态框 -->
+    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="900px" @ok="handleSubmit" @cancel="handleCancel"
+      :footer="isView ? null : undefined">
       <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="班组编码" name="teamCode">
-              <a-input v-model:value="formData.teamCode" placeholder="请输入班组编码" />
+              <a-input v-model:value="formData.teamCode" placeholder="请输入班组编码" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="班组名称" name="teamName">
-              <a-input v-model:value="formData.teamName" placeholder="请输入班组名称" />
+              <a-input v-model:value="formData.teamName" placeholder="请输入班组名称" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="所属部门" name="departmentId">
-              <a-select v-model:value="formData.departmentId" placeholder="请选择所属部门">
+              <a-select v-model:value="formData.departmentId" placeholder="请选择所属部门" :disabled="isView">
                 <a-select-option value="1">生产一部</a-select-option>
                 <a-select-option value="2">生产二部</a-select-option>
                 <a-select-option value="3">生产三部</a-select-option>
@@ -126,7 +127,7 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="班组长" name="leaderId">
-              <a-select v-model:value="formData.leaderId" placeholder="请选择班组长">
+              <a-select v-model:value="formData.leaderId" placeholder="请选择班组长" :disabled="isView">
                 <a-select-option value="1">张三</a-select-option>
                 <a-select-option value="2">李四</a-select-option>
                 <a-select-option value="3">王五</a-select-option>
@@ -138,7 +139,7 @@
         <a-row :gutter="16">
           <a-col :span="8">
             <a-form-item label="工作班次" name="workShift">
-              <a-select v-model:value="formData.workShift" placeholder="请选择工作班次">
+              <a-select v-model:value="formData.workShift" placeholder="请选择工作班次" :disabled="isView">
                 <a-select-option value="day">白班</a-select-option>
                 <a-select-option value="night">夜班</a-select-option>
                 <a-select-option value="morning">早班</a-select-option>
@@ -150,12 +151,12 @@
           <a-col :span="8">
             <a-form-item label="班组人数" name="memberCount">
               <a-input-number v-model:value="formData.memberCount" placeholder="请输入" :min="1" :max="50"
-                style="width: 100%" />
+                style="width: 100%" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
             <a-form-item label="状态" name="status">
-              <a-radio-group v-model:value="formData.status">
+              <a-radio-group v-model:value="formData.status" :disabled="isView">
                 <a-radio value="1">启用</a-radio>
                 <a-radio value="0">禁用</a-radio>
               </a-radio-group>
@@ -165,20 +166,20 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="联系电话" name="phone">
-              <a-input v-model:value="formData.phone" placeholder="请输入联系电话" />
+              <a-input v-model:value="formData.phone" placeholder="请输入联系电话" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="工作地点" name="workLocation">
-              <a-input v-model:value="formData.workLocation" placeholder="请输入工作地点" />
+              <a-input v-model:value="formData.workLocation" placeholder="请输入工作地点" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-form-item label="主要职责" name="responsibilities">
-          <a-textarea v-model:value="formData.responsibilities" placeholder="请输入班组主要职责" :rows="3" />
+          <a-textarea v-model:value="formData.responsibilities" placeholder="请输入班组主要职责" :rows="3" :disabled="isView" />
         </a-form-item>
         <a-form-item label="备注" name="remark">
-          <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="2" />
+          <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="2" :disabled="isView" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -228,6 +229,7 @@
   const modalVisible = ref(false)
   const viewModalVisible = ref(false)
   const isEdit = ref(false)
+  const isView = ref(false)
   const formRef = ref()
   const selectedRowKeys = ref([])
 
@@ -321,7 +323,10 @@
   }
 
   // 计算属性
-  const modalTitle = computed(() => isEdit.value ? '编辑生产班组' : '新增生产班组')
+  const modalTitle = computed(() => {
+    if (isView.value) return '查看生产班组'
+    return isEdit.value ? '编辑生产班组' : '新增生产班组'
+  })
 
   // 选择变更
   const onSelectChange = (keys) => {
@@ -358,13 +363,16 @@
 
   const handleEdit = (record) => {
     isEdit.value = true
+    isView.value = false
     modalVisible.value = true
     Object.assign(formData, record)
   }
 
   const handleView = (record) => {
-    viewData.value = record
-    viewModalVisible.value = true
+    isEdit.value = true
+    isView.value = true
+    Object.assign(formData, record)
+    modalVisible.value = true
   }
 
   const handleDelete = (record) => {

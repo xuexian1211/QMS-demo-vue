@@ -217,7 +217,7 @@
 
     // --- 页面操作 ---
     const handleBack = () => {
-        router.push('/inspection-model/insp-items')
+        router.push('/inspection-model/inspection-items')
     }
 
     const handleSave = async () => {
@@ -225,7 +225,7 @@
             saving.value = true
             await formRef.value?.validate()
             message.success('保存成功')
-            router.push('/inspection-model/insp-items')
+            router.push('/inspection-model/inspection-items')
         } catch (e) {
             message.error('请完善必填项')
         } finally {

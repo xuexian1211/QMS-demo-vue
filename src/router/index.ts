@@ -813,7 +813,7 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/insp-items/create',
+    path: '/inspection-model/inspection-items/create',
     name: 'InspectionItemCreate',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验项目-新增', hideInMenu: true },
@@ -822,7 +822,7 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/insp-items/edit/:id',
+    path: '/inspection-model/inspection-items/edit/:id',
     name: 'InspectionItemEditPage',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验项目-编辑', hideInMenu: true },
@@ -831,7 +831,7 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/insp-items/view/:id',
+    path: '/inspection-model/inspection-items/view/:id',
     name: 'InspectionItemView',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验项目-查看', hideInMenu: true },

@@ -102,25 +102,26 @@
       </a-table>
     </div>
 
-    <!-- 新增/编辑模态框 -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="900px" @ok="handleSubmit" @cancel="handleCancel">
+    <!-- 新增/编辑/查看模态框 -->
+    <a-modal v-model:visible="modalVisible" :title="modalTitle" width="900px" @ok="handleSubmit" @cancel="handleCancel"
+      :footer="isView ? null : undefined">
       <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="地点编码" name="locationCode">
-              <a-input v-model:value="formData.locationCode" placeholder="请输入地点编码" />
+              <a-input v-model:value="formData.locationCode" placeholder="请输入地点编码" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="地点名称" name="locationName">
-              <a-input v-model:value="formData.locationName" placeholder="请输入地点名称" />
+              <a-input v-model:value="formData.locationName" placeholder="请输入地点名称" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="8">
             <a-form-item label="地点类型" name="locationType">
-              <a-select v-model:value="formData.locationType" placeholder="请选择地点类型">
+              <a-select v-model:value="formData.locationType" placeholder="请选择地点类型" :disabled="isView">
                 <a-select-option value="warehouse">仓库</a-select-option>
                 <a-select-option value="workshop">车间</a-select-option>
                 <a-select-option value="office">办公室</a-select-option>
@@ -131,12 +132,12 @@
           <a-col :span="8">
             <a-form-item label="总容量(m³)" name="totalCapacity">
               <a-input-number v-model:value="formData.totalCapacity" placeholder="请输入" :min="0" :precision="2"
-                style="width: 100%" />
+                style="width: 100%" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
             <a-form-item label="状态" name="status">
-              <a-radio-group v-model:value="formData.status">
+              <a-radio-group v-model:value="formData.status" :disabled="isView">
                 <a-radio value="1">启用</a-radio>
                 <a-radio value="0">禁用</a-radio>
               </a-radio-group>
@@ -148,7 +149,7 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="所属部门" name="departmentId">
-              <a-select v-model:value="formData.departmentId" placeholder="请选择所属部门">
+              <a-select v-model:value="formData.departmentId" placeholder="请选择所属部门" :disabled="isView">
                 <a-select-option value="1">生产一部</a-select-option>
                 <a-select-option value="2">生产二部</a-select-option>
                 <a-select-option value="3">仓储部</a-select-option>
@@ -158,7 +159,7 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="负责人" name="managerId">
-              <a-select v-model:value="formData.managerId" placeholder="请选择负责人">
+              <a-select v-model:value="formData.managerId" placeholder="请选择负责人" :disabled="isView">
                 <a-select-option value="1">张三</a-select-option>
                 <a-select-option value="2">李四</a-select-option>
                 <a-select-option value="3">王五</a-select-option>
@@ -170,29 +171,29 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="联系电话" name="phone">
-              <a-input v-model:value="formData.phone" placeholder="请输入联系电话" />
+              <a-input v-model:value="formData.phone" placeholder="请输入联系电话" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
             <a-form-item label="温度要求" name="temperature">
-              <a-input v-model:value="formData.temperature" placeholder="如：常温、0-4℃、-20℃等" />
+              <a-input v-model:value="formData.temperature" placeholder="如：常温、0-4℃、-20℃等" :disabled="isView" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-form-item label="详细地址" name="address">
-          <a-textarea v-model:value="formData.address" placeholder="请输入详细地址" :rows="2" />
+          <a-textarea v-model:value="formData.address" placeholder="请输入详细地址" :rows="2" :disabled="isView" />
         </a-form-item>
 
         <a-divider>存储条件</a-divider>
         <a-row :gutter="16">
           <a-col :span="8">
             <a-form-item label="湿度要求" name="humidity">
-              <a-input v-model:value="formData.humidity" placeholder="如：30-70%" />
+              <a-input v-model:value="formData.humidity" placeholder="如：30-70%" :disabled="isView" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
             <a-form-item label="通风要求" name="ventilation">
-              <a-select v-model:value="formData.ventilation" placeholder="请选择通风要求">
+              <a-select v-model:value="formData.ventilation" placeholder="请选择通风要求" :disabled="isView">
                 <a-select-option value="good">良好</a-select-option>
                 <a-select-option value="normal">一般</a-select-option>
                 <a-select-option value="poor">较差</a-select-option>
@@ -201,7 +202,7 @@
           </a-col>
           <a-col :span="8">
             <a-form-item label="防火等级" name="fireLevel">
-              <a-select v-model:value="formData.fireLevel" placeholder="请选择防火等级">
+              <a-select v-model:value="formData.fireLevel" placeholder="请选择防火等级" :disabled="isView">
                 <a-select-option value="A">A级</a-select-option>
                 <a-select-option value="B">B级</a-select-option>
                 <a-select-option value="C">C级</a-select-option>
@@ -210,10 +211,11 @@
           </a-col>
         </a-row>
         <a-form-item label="特殊要求" name="specialRequirements">
-          <a-textarea v-model:value="formData.specialRequirements" placeholder="请输入特殊存储要求" :rows="2" />
+          <a-textarea v-model:value="formData.specialRequirements" placeholder="请输入特殊存储要求" :rows="2"
+            :disabled="isView" />
         </a-form-item>
         <a-form-item label="备注" name="remark">
-          <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="2" />
+          <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="2" :disabled="isView" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -272,6 +274,7 @@
   const modalVisible = ref(false)
   const viewModalVisible = ref(false)
   const isEdit = ref(false)
+  const isView = ref(false)
   const formRef = ref()
   const selectedRowKeys = ref([])
 
@@ -387,7 +390,10 @@
   }
 
   // 计算属性
-  const modalTitle = computed(() => isEdit.value ? '编辑存储地点' : '新增存储地点')
+  const modalTitle = computed(() => {
+    if (isView.value) return '查看存储地点'
+    return isEdit.value ? '编辑存储地点' : '新增存储地点'
+  })
 
   // 选择变更
   const onSelectChange = (keys) => {
@@ -424,13 +430,16 @@
 
   const handleEdit = (record) => {
     isEdit.value = true
+    isView.value = false
     modalVisible.value = true
     Object.assign(formData, record)
   }
 
   const handleView = (record) => {
-    viewData.value = record
-    viewModalVisible.value = true
+    isEdit.value = true
+    isView.value = true
+    Object.assign(formData, record)
+    modalVisible.value = true
   }
 
   const handleDelete = (record) => {
