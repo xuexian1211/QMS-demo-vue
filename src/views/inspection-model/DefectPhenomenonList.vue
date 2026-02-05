@@ -125,6 +125,14 @@
             <a-form-item label="所属分类">
               <a-input :value="selectedCategory?.categoryName" disabled />
             </a-form-item>
+            <!-- ✨ 新增：组织选择器 -->
+            <a-form-item label="所属组织">
+              <a-select v-model:value="phenomenonForm.orgId" allow-clear placeholder="选择组织（留空表示集团级）">
+                <a-select-option :value="undefined">集团级（全局可见）</a-select-option>
+                <a-select-option :value="1">合肥工厂</a-select-option>
+                <a-select-option :value="2">芜湖工厂</a-select-option>
+              </a-select>
+            </a-form-item>
             <a-form-item label="现象代码" required><a-input v-model:value="phenomenonForm.code" /></a-form-item>
             <a-form-item label="现象名称" required><a-input v-model:value="phenomenonForm.name" /></a-form-item>
             <a-form-item label="严重等级" required>
@@ -150,6 +158,11 @@
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.key === 'causeType'">
                 <a-tag :color="getCauseTypeColor(record.causeType)">{{ getCauseTypeText(record.causeType) }}</a-tag>
+              </template>
+              <!-- ✨ 新增：权重输入框 -->
+              <template v-else-if="column.key === 'weight'">
+                <a-input-number v-model:value="record.weight" :min="1" :max="10" size="small" style="width: 80px"
+                  @change="handleWeightChange" />
               </template>
               <template v-else-if="column.key === 'action'">
                 <a-button type="link" danger size="small" @click="handleRemoveCauseFromPhenomenon(index)">移除</a-button>
@@ -439,6 +452,7 @@
     { title: '原因代码', dataIndex: 'causeCode', key: 'causeCode', width: 120 },
     { title: '原因名称', dataIndex: 'causeName', key: 'causeName', width: 150 },
     { title: '原因类别', key: 'causeType', width: 100 },
+    { title: '权重', key: 'weight', width: 100 },  // ✨ 新增权重列
     { title: '描述', dataIndex: 'description', key: 'description' },
     { title: '操作', key: 'action', width: 80 }
   ]
@@ -486,9 +500,24 @@
     if (!phenomenonForm.relatedCauses) {
       phenomenonForm.relatedCauses = []
     }
-    phenomenonForm.relatedCauses.push(...newCauses)
+    // ✨ 为新添加的原因设置默认权重
+    const causesWithWeight = newCauses.map(c => ({
+      ...c,
+      weight: c.weight || 1  // 默认权重为1
+    }))
+    phenomenonForm.relatedCauses.push(...causesWithWeight)
+    // ✨ 按权重降序排序
+    phenomenonForm.relatedCauses.sort((a, b) => (b.weight || 1) - (a.weight || 1))
     causeSelectVisible.value = false
     message.success(`已添加 ${newCauses.length} 个不良原因`)
+  }
+
+  // ✨ 权重变化处理函数
+  const handleWeightChange = () => {
+    // 权重变化后重新排序
+    if (phenomenonForm.relatedCauses) {
+      phenomenonForm.relatedCauses.sort((a, b) => (b.weight || 1) - (a.weight || 1))
+    }
   }
 
   const handleRemoveCauseFromPhenomenon = (index: number) => {

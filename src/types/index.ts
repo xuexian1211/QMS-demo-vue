@@ -141,44 +141,58 @@ export interface SPCRecord extends BaseEntity {
 
 /** 缺陷分类 */
 export interface DefectCategory extends BaseEntity {
-  orgId: string
+  orgId?: number  // ✨ 组织ID，NULL表示集团级
   categoryCode: string
   categoryName: string
-  parentId: string | null
-  level: number
-  sortOrder: number
+  parentId?: number | null
+  level?: number
+  sortOrder?: number
   description?: string
-  status: 'enabled' | 'disabled'
+  status?: 'enabled' | 'disabled'
   children?: DefectCategory[]
 }
 
 /** 不良现象 */
 export interface DefectPhenomenon extends BaseEntity {
-  orgId: string
+  orgId?: number  // ✨ 组织ID，NULL表示集团级
   code: string
   name: string
-  categoryId: string
+  categoryId: number
   severity: 'CR' | 'MA' | 'MI'
   processType?: string
   description?: string
-  status: 'enabled' | 'disabled'
-  /** 关联的不良原因ID列表 */
-  relatedCauseIds?: string[]
+  status?: 'enabled' | 'disabled'
+  /** 关联的不良原因（含权重） */
+  relatedCauses?: PhenomenonCauseMapping[]
 }
 
 /** 不良原因 */
 export interface DefectCause extends BaseEntity {
-  orgId: string
+  orgId?: number  // ✨ 组织ID，NULL表示集团级
   code: string
   name: string
-  parentId: string | null
-  level: number
-  sortOrder: number
+  category: 'Man' | 'Machine' | 'Material' | 'Method' | 'Environment'  // 5M分类
+  parentId?: number | null  // ✨ 父原因ID，支持树状结构
+  isHighFrequency: boolean  // ✨ 是否高频原因
+  level?: number
+  sortOrder?: number
   description?: string
-  status: 'enabled' | 'disabled'
-  children?: DefectCause[]
+  status?: 'enabled' | 'disabled'
+  children?: DefectCause[]  // 子原因列表
   /** 关联的不良现象ID列表 */
   relatedPhenomenonIds?: string[]
+}
+
+/** 现象-原因关联映射（知识库） */
+export interface PhenomenonCauseMapping {
+  phenomenonId: number
+  orgId: number  // ✨ 组织ID
+  causeId: number
+  weight: number  // ✨ 权重/发生频率 (1-10)
+  // 冗余字段（用于显示）
+  causeName?: string
+  causeCode?: string
+  causeType?: string
 }
 
 /** 检验项目 */
