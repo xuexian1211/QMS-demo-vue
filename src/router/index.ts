@@ -502,6 +502,55 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   },
+  // 系统更新日志管理
+  {
+    path: '/system/update-log',
+    name: 'UpdateLog',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '系统更新日志' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/system/UpdateLog.vue')
+      }
+    ]
+  },
+  {
+    path: '/system/update-log/create',
+    name: 'UpdateLogCreate',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '新增更新日志', hideInMenu: true },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/system/UpdateLogEditor.vue')
+      }
+    ]
+  },
+  {
+    path: '/system/update-log/edit/:id',
+    name: 'UpdateLogEdit',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '编辑更新日志', hideInMenu: true },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/system/UpdateLogEditor.vue')
+      }
+    ]
+  },
+  {
+    path: '/system/update-log/detail/:id',
+    name: 'UpdateLogDetail',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '更新日志详情', hideInMenu: true },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/system/UpdateLogDetail.vue')
+      }
+    ]
+  },
   {
     path: '/documents',
     name: 'Documents',

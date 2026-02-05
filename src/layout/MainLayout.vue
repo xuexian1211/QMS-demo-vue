@@ -155,6 +155,9 @@
               @blur="handleSearchBlur" @click.stop ref="searchInput" style="width: 200px" />
           </div>
           <a-space>
+            <a-tooltip title="系统更新日志">
+              <span class="update-log-icon" @click="navigateTo('/system/update-log')">📝</span>
+            </a-tooltip>
             <a-badge count="5">
               <span class="notification-icon">🔔</span>
             </a-badge>
@@ -573,6 +576,18 @@
     background: rgba(255, 255, 255, 0.15);
     border-color: #1890ff;
     box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  }
+
+  .update-log-icon {
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+  }
+
+  .update-log-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
   .notification-icon {

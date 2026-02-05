@@ -352,3 +352,135 @@ export interface Customer extends BaseEntity {
   description?: string
   status: 'active' | 'inactive'
 }
+
+// ===============================
+// 系统更新日志类型定义
+// ===============================
+
+/** 更新日志 */
+export interface UpdateLog extends BaseEntity {
+  orgId: string
+  version: string
+  title: string
+  content: string
+  contentType: 'html' | 'markdown'
+  updateType: 'feature' | 'fix' | 'optimize' | 'breaking'
+  affectedModules: string[]
+  relatedChangeId?: string
+  status: 'draft' | 'published' | 'archived'
+  publishedAt?: string
+  publishedBy?: string
+}
+
+/** 更新日志列表查询参数 */
+export interface UpdateLogQueryParams {
+  page?: number
+  pageSize?: number
+  version?: string
+  updateType?: 'feature' | 'fix' | 'optimize' | 'breaking'
+  status?: 'draft' | 'published' | 'archived'
+  startDate?: string
+  endDate?: string
+  keyword?: string
+}
+
+/** 更新日志创建/更新请求 */
+export interface UpdateLogFormData {
+  version: string
+  title: string
+  content: string
+  contentType: 'html' | 'markdown'
+  updateType: 'feature' | 'fix' | 'optimize' | 'breaking'
+  affectedModules: string[]
+  relatedChangeId?: string
+}
+
+// ===============================
+// 功能设计文档类型定义
+// ===============================
+
+/** 设计任务 */
+export interface DesignTask {
+  id: string
+  taskNumber: string
+  title: string
+  description: string
+  assigneeRole: 'frontend' | 'backend' | 'test' | 'all'
+  status: 'pending' | 'in-progress' | 'completed'
+  estimatedHours?: number
+  dependencies: string[]
+  completedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** 功能设计文档 */
+export interface DesignDocument {
+  id: string
+  updateLogId: string
+  title: string
+  documentType: 'frontend' | 'backend' | 'test' | 'general'
+  tasks: DesignTask[]
+  createdAt: string
+  createdBy: string
+  updatedAt: string
+  orgId: string
+}
+
+/** 设计文档查询参数 */
+export interface DesignDocumentQueryParams {
+  updateLogId: string
+  documentType?: 'frontend' | 'backend' | 'test' | 'general'
+}
+
+/** 设计文档创建请求 */
+export interface DesignDocumentFormData {
+  updateLogId: string
+  title: string
+  documentType: 'frontend' | 'backend' | 'test' | 'general'
+  tasks: Omit<DesignTask, 'id' | 'createdAt' | 'updatedAt'>[]
+}
+
+/** 任务状态更新请求 */
+export interface TaskStatusUpdateRequest {
+  status: 'pending' | 'in-progress' | 'completed'
+}
+
+// ===============================
+// API 响应类型定义
+// ===============================
+
+/** 分页响应 */
+export interface PageResult<T> {
+  list: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+/** 通用 API 响应 */
+export interface ApiResponse<T = any> {
+  code: number
+  message: string
+  data: T
+  success: boolean
+}
+
+/** 更新日志统计 */
+export interface UpdateLogStats {
+  totalCount: number
+  draftCount: number
+  publishedCount: number
+  archivedCount: number
+  unreadCount: number
+}
+
+/** 设计文档进度统计 */
+export interface DesignDocumentProgress {
+  documentType: 'frontend' | 'backend' | 'test' | 'general'
+  totalTasks: number
+  completedTasks: number
+  inProgressTasks: number
+  pendingTasks: number
+  completionRate: number
+}
