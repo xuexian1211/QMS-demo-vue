@@ -35,6 +35,13 @@
         <a-form-item label="方法名称">
           <a-input v-model:value="queryParam.methodName" placeholder="请输入" allow-clear />
         </a-form-item>
+        <a-form-item label="组织">
+          <a-select v-model:value="queryParam.orgId" placeholder="请选择" allow-clear style="width: 150px">
+            <a-select-option :value="null">集团</a-select-option>
+            <a-select-option :value="1">合肥工厂</a-select-option>
+            <a-select-option :value="2">芜湖工厂</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item label="附件ID">
           <a-input v-model:value="queryParam.attachmentId" placeholder="请输入" allow-clear />
         </a-form-item>
@@ -50,7 +57,13 @@
         :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }" :pagination="pagination"
         @change="handleTableChange">
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'action'">
+          <template v-if="column.key === 'orgId'">
+            <a-tag v-if="record.orgId === null" color="blue">集团</a-tag>
+            <span v-else-if="record.orgId === 1">合肥工厂</span>
+            <span v-else-if="record.orgId === 2">芜湖工厂</span>
+            <span v-else>工厂{{ record.orgId }}</span>
+          </template>
+          <template v-else-if="column.key === 'action'">
             <a-space>
               <a-button type="link" size="small" @click="handleEdit(record)">编辑</a-button>
               <a-divider type="vertical" />
@@ -64,6 +77,13 @@
     <!-- Edit Modal -->
     <a-modal v-model:visible="modalVisible" :title="isEdit ? '编辑检验方法' : '新增检验方法'" width="600px" @ok="handleSave">
       <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
+        <a-form-item label="组织" name="orgId">
+          <a-select v-model:value="formState.orgId" placeholder="请选择">
+            <a-select-option :value="null">集团</a-select-option>
+            <a-select-option :value="1">合肥工厂</a-select-option>
+            <a-select-option :value="2">芜湖工厂</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item label="方法名称" name="methodName">
           <a-input v-model:value="formState.methodName" placeholder="请输入方法名称" />
         </a-form-item>
@@ -92,7 +112,8 @@
   const selectedRowKeys = ref < string[] > ([])
   const queryParam = reactive({
     methodName: '',
-    attachmentId: ''
+    attachmentId: '',
+    orgId: undefined as number | null | undefined
   })
 
   const pagination = reactive({
@@ -105,6 +126,7 @@
 
   const columns = [
     { title: '方法名称', dataIndex: 'methodName', key: 'methodName', width: 200 },
+    { title: '组织', dataIndex: 'orgId', key: 'orgId', width: 120 },
     { title: '附件ID', dataIndex: 'attachmentId', key: 'attachmentId', width: 200 },
     { title: '操作步骤', dataIndex: 'operationText', key: 'operationText', ellipsis: true },
     { title: '操作', key: 'action', width: 150, fixed: 'right' }
@@ -115,13 +137,21 @@
     setTimeout(() => {
       // Mock data
       let data = [
-        { id: '201', methodName: '通用卡尺测量法', operationText: '1. 校零 2. 清洁工件 3. 测量关键尺寸 4.记录', attachmentId: 'FILE_SOP_001.pdf' },
-        { id: '202', methodName: '目视检查', operationText: '1. 明确判定标准 2. 在自然光条件下检查表面 3.记录', attachmentId: '' },
+        { id: '201', orgId: null, methodName: '通用卡尺测量法', operationText: '1. 校零 2. 清洁工件 3. 测量关键尺寸 4.记录', attachmentId: 'FILE_SOP_001.pdf' },
+        { id: '202', orgId: 1, methodName: '蓝牙卡尺测量法', operationText: '1. 开启蓝牙 2. 配对设备 3. 自动传输数据', attachmentId: 'FILE_SOP_002.pdf' },
+        { id: '203', orgId: null, methodName: '目视检查', operationText: '1. 明确判定标准 2. 在自然光条件下检查表面 3.记录', attachmentId: '' },
       ]
 
       // Filter
       if (queryParam.methodName) data = data.filter(i => i.methodName.includes(queryParam.methodName))
       if (queryParam.attachmentId) data = data.filter(i => (i.attachmentId || '').includes(queryParam.attachmentId))
+      if (queryParam.orgId !== undefined) {
+        if (queryParam.orgId === null) {
+          data = data.filter(i => i.orgId === null)
+        } else {
+          data = data.filter(i => i.orgId === queryParam.orgId)
+        }
+      }
 
       tableData.value = data
       pagination.total = data.length
@@ -137,6 +167,7 @@
   const handleReset = () => {
     queryParam.methodName = ''
     queryParam.attachmentId = ''
+    queryParam.orgId = undefined
     handleSearch()
   }
 
@@ -156,18 +187,36 @@
   const formRef = ref()
   const formState = reactive({
     id: null,
+    orgId: null as number | null,
     methodName: '',
     attachmentId: '',
     operationText: ''
   })
 
   const rules = {
-    methodName: [{ required: true, message: '请输入方法名称', trigger: 'blur' }]
+    methodName: [
+      { required: true, message: '请输入方法名称', trigger: 'blur' },
+      {
+        validator: async (_rule: any, value: string) => {
+          if (!value) return Promise.resolve()
+          const exists = tableData.value.some(item =>
+            item.methodName === value &&
+            item.orgId === formState.orgId &&
+            item.id !== formState.id
+          )
+          if (exists) {
+            return Promise.reject('该组织下已存在同名方法')
+          }
+          return Promise.resolve()
+        },
+        trigger: 'blur'
+      }
+    ]
   }
 
   const handleAdd = () => {
     isEdit.value = false
-    Object.assign(formState, { id: null, methodName: '', attachmentId: '', operationText: '' })
+    Object.assign(formState, { id: null, orgId: null, methodName: '', attachmentId: '', operationText: '' })
     modalVisible.value = true
   }
 

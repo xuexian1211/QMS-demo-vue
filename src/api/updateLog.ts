@@ -24,6 +24,21 @@ const generateMockUpdateLogs = (): UpdateLog[] => {
 const generateMockDesignDocuments = (updateLogId: string): DesignDocument[] => {
   const documentTypes: Array<'frontend' | 'backend' | 'test' | 'general'> = ['frontend', 'backend', 'test', 'general']
   
+  // 如果是量检具增强功能，返回真实任务
+  if (updateLogId === 'log-enhance-gauge-lifecycle-management') {
+    return documentTypes.map((type, index) => ({
+      id: `doc-${updateLogId}-${index}`,
+      updateLogId,
+      title: `${type === 'frontend' ? '前端' : type === 'backend' ? '后端' : type === 'test' ? '测试' : '通用'}任务文档`,
+      documentType: type,
+      tasks: generateGaugeManagementTasks(type),
+      createdAt: new Date().toISOString(),
+      createdBy: 'admin',
+      updatedAt: new Date().toISOString(),
+      orgId: 'org-001'
+    }))
+  }
+
   return documentTypes.map((type, index) => ({
     id: `doc-${updateLogId}-${index}`,
     updateLogId,
@@ -36,6 +51,138 @@ const generateMockDesignDocuments = (updateLogId: string): DesignDocument[] => {
     orgId: 'org-001'
   }))
 }
+
+const generateGaugeManagementTasks = (role: string): DesignTask[] => {
+  const tasks: Record<string, DesignTask[]> = {
+    frontend: [
+      {
+        id: 'task-fe-1',
+        taskNumber: '1.1',
+        title: '创建 GaugeLedgerDetail.vue 详情页',
+        description: '实现顶部概览卡片 + 底部多页签交互布局，包含校准记录时间线。',
+        assigneeRole: 'frontend',
+        status: 'completed',
+        estimatedHours: 8,
+        dependencies: [],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'task-fe-2',
+        taskNumber: '1.2',
+        title: '重构 GaugeLedgerList.vue 编辑弹窗',
+        description: '实现表单字段的逻辑分组（基本/技术/校准/管理）及校验规则。',
+        assigneeRole: 'frontend',
+        status: 'completed',
+        estimatedHours: 4,
+        dependencies: [],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'task-fe-3',
+        taskNumber: '1.3',
+        title: '封装 CalibrationRecordModal 业务弹窗',
+        description: '独立封装校准结果录入逻辑，支持自动关联有效期更新。',
+        assigneeRole: 'frontend',
+        status: 'completed',
+        estimatedHours: 4,
+        dependencies: ['task-fe-1'],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'task-fe-4',
+        taskNumber: '1.4',
+        title: '实现台账批量导入 (Import) 功能',
+        description: '集成 a-upload 组件，实现模拟导入延迟及前端数据插入回显。',
+        assigneeRole: 'frontend',
+        status: 'completed',
+        estimatedHours: 6,
+        dependencies: [],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ],
+    backend: [
+      {
+        id: 'task-be-1',
+        taskNumber: '2.1',
+        title: '扩展 GaugeLedger 类型定义',
+        description: '在 src/types/index.ts 中增加 12+ 质量属性字段。',
+        assigneeRole: 'backend',
+        status: 'completed',
+        estimatedHours: 2,
+        dependencies: [],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'task-be-2',
+        taskNumber: '2.2',
+        title: '定义状态机枚举 GaugeStatus',
+        description: '确立 IN_USE, CALIBRATING, SEALED, SCRAPPED 的业务状态标识。',
+        assigneeRole: 'backend',
+        status: 'completed',
+        estimatedHours: 1,
+        dependencies: [],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ],
+    test: [
+      {
+        id: 'task-test-1',
+        taskNumber: '3.1',
+        title: '生产环境 Vite Build 构建测试',
+        description: '验证并修复 Vue 3 生产模式下的 v-model 属性绑定冲突错误。',
+        assigneeRole: 'test',
+        status: 'completed',
+        estimatedHours: 4,
+        dependencies: [],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'task-test-2',
+        taskNumber: '3.2',
+        title: '全链路业务闭环验证',
+        description: '模拟「购入-入库-校准-延期-报废」完整生命周期逻辑一致性测试。',
+        assigneeRole: 'test',
+        status: 'completed',
+        estimatedHours: 8,
+        dependencies: [],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ],
+    general: [
+      {
+        id: 'task-gen-1',
+        taskNumber: '4.1',
+        title: '同步 OpenSpec 需求规格至更新日志',
+        description: '实现设计文档与更新日志的深度绑定，确保文档追溯。',
+        assigneeRole: 'general' as any,
+        status: 'completed',
+        estimatedHours: 2,
+        dependencies: [],
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ]
+  }
+  return tasks[role] || []
+}
+
 
 const generateMockTasks = (role: string, count: number): DesignTask[] => {
   const statuses: Array<'pending' | 'in-progress' | 'completed'> = ['pending', 'in-progress', 'completed']

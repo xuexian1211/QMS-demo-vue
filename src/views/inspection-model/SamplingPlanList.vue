@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <div class="split-layout">
       <!-- 左侧：抽样方案管理 -->
@@ -29,6 +29,12 @@
               <SearchOutlined />
             </template>
           </a-input>
+          <a-select v-model:value="orgFilter" placeholder="组织过滤" allow-clear size="small"
+            style="width: 100%; margin-top: 8px;">
+            <a-select-option :value="null">集团</a-select-option>
+            <a-select-option :value="1">合肥工厂</a-select-option>
+            <a-select-option :value="2">芜湖工厂</a-select-option>
+          </a-select>
         </div>
 
         <div class="plan-list">
@@ -197,6 +203,7 @@
   const plansLoading = ref(false)
   const plansData = ref < any[] > ([])
   const planSearch = ref('')
+  const orgFilter = ref<number | null | undefined>(undefined)
   const selectedPlanId = ref < number | null > (null)
 
   const rulesLoading = ref(false)
@@ -211,12 +218,27 @@
 
   // 过滤方案列表
   const filteredPlans = computed(() => {
-    if (!planSearch.value) return plansData.value
-    const key = planSearch.value.toLowerCase()
-    return plansData.value.filter(p =>
-      p.planCode.toLowerCase().includes(key) ||
-      p.planName.toLowerCase().includes(key)
-    )
+    let result = plansData.value
+
+    // 文本搜索
+    if (planSearch.value) {
+      const key = planSearch.value.toLowerCase()
+      result = result.filter(p =>
+        p.planCode.toLowerCase().includes(key) ||
+        p.planName.toLowerCase().includes(key)
+      )
+    }
+
+    // 组织过滤
+    if (orgFilter.value !== undefined) {
+      if (orgFilter.value === null) {
+        result = result.filter(p => p.orgId === null)
+      } else {
+        result = result.filter(p => p.orgId === orgFilter.value)
+      }
+    }
+
+    return result
   })
 
   const selectedPlan = computed(() => plansData.value.find(p => p.id === selectedPlanId.value))

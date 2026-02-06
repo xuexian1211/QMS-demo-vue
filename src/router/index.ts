@@ -1047,6 +1047,26 @@ const routes: RouteRecordRaw[] = [
     ]
   },
 
+  // 量检具台账管理
+  {
+    path: '/inspection-model/gauge-ledgers',
+    name: 'GaugeLedgerList',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '量检具台账' },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/GaugeLedgerList.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/gauge-ledgers/:id',
+    name: 'GaugeLedgerDetail',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '量检具详情', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/GaugeLedgerDetail.vue') }
+    ]
+  },
+
 ]
 
 const router = createRouter({

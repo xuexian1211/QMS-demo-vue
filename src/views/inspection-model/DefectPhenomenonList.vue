@@ -82,6 +82,33 @@
             </div>
           </div>
 
+          <!-- ✨ 查询组件 -->
+          <div class="search-box">
+            <a-form layout="inline" :model="phenomenonQuery">
+              <a-form-item label="现象代码">
+                <a-input v-model:value="phenomenonQuery.code" placeholder="模糊搜索" allow-clear style="width: 150px" />
+              </a-form-item>
+              <a-form-item label="现象名称">
+                <a-input v-model:value="phenomenonQuery.name" placeholder="模糊搜索" allow-clear style="width: 150px" />
+              </a-form-item>
+              <a-form-item label="严重等级">
+                <a-select v-model:value="phenomenonQuery.severity" placeholder="选择等级" allow-clear style="width: 120px">
+                  <a-select-option value="CR">致命 (CR)</a-select-option>
+                  <a-select-option value="MA">主要 (MA)</a-select-option>
+                  <a-select-option value="MI">次要 (MI)</a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="适用工序">
+                <a-input v-model:value="phenomenonQuery.processType" placeholder="如：压铸" allow-clear
+                  style="width: 120px" />
+              </a-form-item>
+              <a-form-item>
+                <a-button type="primary" @click="handlePhenomenonSearch">查询</a-button>
+                <a-button style="margin-left: 8px" @click="handlePhenomenonReset">重置</a-button>
+              </a-form-item>
+            </a-form>
+          </div>
+
           <div class="table-container">
             <a-table :columns="phenomenonColumns" :data-source="phenomenaData" :loading="phenomenaLoading" row-key="id"
               size="middle"
@@ -209,8 +236,43 @@
   const expandedKeys = ref < number[] > ([])
 
   const phenomenaLoading = ref(false)
-  const phenomenaData = ref < any[] > ([])
+  const rawPhenomenaData = ref < any[] > ([])  // ✨ 原始数据
   const selectedPhenomenonKeys = ref < number[] > ([])
+
+  // ✨ 查询参数
+  const phenomenonQuery = reactive({
+    code: '',
+    name: '',
+    severity: undefined as string | undefined,
+    processType: ''
+  })
+
+  // ✨ 过滤后的现象数据（计算属性）
+  const phenomenaData = computed(() => {
+    let data = rawPhenomenaData.value
+
+    // 按现象代码过滤
+    if (phenomenonQuery.code) {
+      data = data.filter(p => p.code?.toLowerCase().includes(phenomenonQuery.code.toLowerCase()))
+    }
+
+    // 按现象名称过滤
+    if (phenomenonQuery.name) {
+      data = data.filter(p => p.name?.toLowerCase().includes(phenomenonQuery.name.toLowerCase()))
+    }
+
+    // 按严重等级过滤
+    if (phenomenonQuery.severity) {
+      data = data.filter(p => p.severity === phenomenonQuery.severity)
+    }
+
+    // 按适用工序过滤
+    if (phenomenonQuery.processType) {
+      data = data.filter(p => p.processType?.toLowerCase().includes(phenomenonQuery.processType.toLowerCase()))
+    }
+
+    return data
+  })
 
   // 弹窗状态
   const categoryModalVisible = ref(false)
@@ -281,7 +343,7 @@
     if (keys.length > 0) {
       loadPhenomena(keys[0])
     } else {
-      phenomenaData.value = []
+      rawPhenomenaData.value = []
     }
   }
 
@@ -350,16 +412,16 @@
     // Mock data based on category
     setTimeout(() => {
       if (categoryId === 1 || categoryId === 11) {
-        phenomenaData.value = [
+        rawPhenomenaData.value = [
           { id: 101, code: 'DEF-001', name: '表面划伤', severity: 'MI', processType: '全工序', description: '可见划痕' },
           { id: 102, code: 'DEF-002', name: '气孔', severity: 'MA', processType: '压铸', description: '表面密集气孔' }
         ]
       } else if (categoryId === 2) {
-        phenomenaData.value = [
+        rawPhenomenaData.value = [
           { id: 201, code: 'DIM-001', name: '长度超差', severity: 'MA', processType: '机加', description: '' }
         ]
       } else {
-        phenomenaData.value = []
+        rawPhenomenaData.value = []
       }
       phenomenaLoading.value = false
     }, 300)
@@ -387,7 +449,7 @@
       content: `确定删除不良现象 ${record.name} 吗？`,
       okType: 'danger',
       onOk() {
-        phenomenaData.value = phenomenaData.value.filter(p => p.id !== record.id)
+        rawPhenomenaData.value = rawPhenomenaData.value.filter(p => p.id !== record.id)
         message.success('删除成功')
       }
     })
@@ -399,7 +461,7 @@
       content: `确定删除选中的 ${selectedPhenomenonKeys.value.length} 条记录吗？`,
       okType: 'danger',
       onOk() {
-        phenomenaData.value = phenomenaData.value.filter(p => !selectedPhenomenonKeys.value.includes(p.id))
+        rawPhenomenaData.value = rawPhenomenaData.value.filter(p => !selectedPhenomenonKeys.value.includes(p.id))
         selectedPhenomenonKeys.value = []
         message.success('批量删除成功')
       }
@@ -413,10 +475,10 @@
     }
 
     if (isEditPhenomenon.value) {
-      const idx = phenomenaData.value.findIndex(p => p.id === phenomenonForm.id)
-      if (idx !== -1) Object.assign(phenomenaData.value[idx], { ...phenomenonForm })
+      const idx = rawPhenomenaData.value.findIndex(p => p.id === phenomenonForm.id)
+      if (idx !== -1) Object.assign(rawPhenomenaData.value[idx], { ...phenomenonForm })
     } else {
-      phenomenaData.value.push({ ...phenomenonForm, id: Date.now() })
+      rawPhenomenaData.value.push({ ...phenomenonForm, id: Date.now() })
     }
 
     message.success('保存成功')
@@ -439,6 +501,21 @@
     const { exportToCSV } = useExport()
     exportToCSV(phenomenaData.value, columns, `不良现象_${selectedCategory.value?.categoryName || '导出'}`)
     message.success('导出成功')
+  }
+
+  // ✨ 查询和重置函数
+  const handlePhenomenonSearch = () => {
+    // 查询逻辑已在计算属性中实现，这里不需要额外操作
+    // 可以添加一些提示信息
+    message.success('查询完成')
+  }
+
+  const handlePhenomenonReset = () => {
+    phenomenonQuery.code = ''
+    phenomenonQuery.name = ''
+    phenomenonQuery.severity = undefined
+    phenomenonQuery.processType = ''
+    message.success('已重置查询条件')
   }
 
   // --- 关联原因逻辑 ---
@@ -688,6 +765,12 @@
   .desc {
     color: #8c8c8c;
     font-size: 12px;
+  }
+
+  .search-box {
+    padding: 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
   }
 
   .table-container {

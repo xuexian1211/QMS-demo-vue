@@ -224,6 +224,80 @@ export interface MeasureType extends BaseEntity {
   children?: MeasureType[]
 }
 
+// ===============================
+// 量检具管理类型定义
+// ===============================
+
+/** 量检具状态 */
+export type GaugeStatus = 'IN_USE' | 'CALIBRATING' | 'SEALED' | 'SCRAPPED'
+
+/** 校准类型 */
+export type CalibrationType = 'INTERNAL' | 'EXTERNAL'
+
+/** 校准结果 */
+export type CalibrationResult = 'PASS' | 'FAIL' | 'CONDITIONAL'
+
+/** 量检具台账 */
+export interface GaugeLedger extends BaseEntity {
+  // === 基本信息 ===
+  gaugeNo: string           // 量具编号（唯一）
+  gaugeName: string         // 量具名称
+  typeId: string            // 关联量检具类型
+  typeName?: string         // 冗余：类型名称
+  model?: string            // 规格型号
+  description?: string      // 描述/备注
+
+  // === 技术参数 ===
+  manufacturer?: string     // 制造商/厂家
+  serialNo?: string         // 出厂序列号
+  measureRange?: string     // 量程范围（如 "0-150mm"）
+  resolution?: number       // 分辨率/分度值
+  accuracy?: string         // 精度等级
+
+  // === 校准信息 ===
+  calibrationCycle?: number // 校准周期（月）
+  lastCalDate?: string      // 上次校准日期
+  nextCalDate?: string      // 下次校准日期
+  certificateNo?: string    // 当前有效检定证书编号
+
+  // === 管理信息 ===
+  status: GaugeStatus       // 当前状态
+  purchaseDate?: string     // 购置日期
+  expiryDate?: string       // 有效期/预计报废日期
+  location?: string         // 存放位置/使用部门
+  custodian?: string        // 保管人/责任人
+  attachmentIds?: string[]  // 附件列表（证书、说明书等）
+}
+
+/** 校准记录 */
+export interface CalibrationRecord extends BaseEntity {
+  gaugeId: string                 // 关联量检具台账
+  calibrationType: CalibrationType // 校准类型
+  calibrationDate: string         // 校准日期
+  nextCalDate: string             // 下次校准日期
+  result: CalibrationResult       // 校准结果
+  calibrationOrg?: string         // 校准机构
+  calibrator?: string             // 校准人员
+  certificateNo?: string          // 证书编号
+  beforeValue?: string            // 校准前数据/读数
+  afterValue?: string             // 校准后数据/读数
+  deviation?: string              // 偏差值
+  conclusion?: string             // 结论/备注
+  attachmentIds?: string[]        // 附件（校准证书扫描件等）
+}
+
+/** 量检具状态变更日志 */
+export interface GaugeStatusLog extends BaseEntity {
+  gaugeId: string           // 关联量检具台账
+  fromStatus: GaugeStatus   // 原状态
+  toStatus: GaugeStatus     // 新状态
+  reason?: string           // 变更原因
+  operator: string          // 操作人
+  operateTime: string       // 操作时间
+}
+
+
+
 /** 物料检验规格 */
 export interface MaterialSpec extends BaseEntity {
   orgId: string

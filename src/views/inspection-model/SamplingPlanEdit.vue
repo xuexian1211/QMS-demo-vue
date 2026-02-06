@@ -109,7 +109,7 @@
         </a-card>
 
         <!-- 规则编辑弹窗 -->
-        <a-modal v-model:visible="ruleModalVisible" :title="isEditRule ? '编辑规则' : '新增规则'" width="700px" @ok="saveRule">
+        <a-modal v-model:visible="ruleModalVisible" :title="isEditRule ? '编辑规则' : '新增规则'" width="900px" @ok="saveRule">
             <a-form layout="vertical" :model="ruleForm">
                 <a-row :gutter="16">
                     <a-col :span="12">
@@ -123,7 +123,19 @@
                         </a-form-item>
                     </a-col>
                 </a-row>
-                <a-row :gutter="16">
+
+                <!-- 动态提示信息 -->
+                <a-alert v-if="form.samplingMethod === 'STANDARD_BASED'" message="国标抽样模式"
+                    description="需要配置检验水平、AQL值和抽样明细表" type="info" show-icon style="margin-bottom: 16px;" />
+                <a-alert v-else-if="form.samplingMethod === 'FIXED_QUANTITY'" message="固定数量抽样模式"
+                    description="需要设置固定的样本数量" type="success" show-icon style="margin-bottom: 16px;" />
+                <a-alert v-else-if="form.samplingMethod === 'PERCENTAGE'" message="百分比抽样模式"
+                    description="需要设置抽样比率（1-100%）" type="warning" show-icon style="margin-bottom: 16px;" />
+                <a-alert v-else-if="form.samplingMethod === 'FULL_INSPECTION'" message="全检模式" description="无需配置额外参数"
+                    type="default" show-icon style="margin-bottom: 16px;" />
+
+                <!-- 国标抽样：显示检验水平、类型、AQL -->
+                <a-row :gutter="16" v-if="form.samplingMethod === 'STANDARD_BASED'">
                     <a-col :span="8">
                         <a-form-item label="检验水平">
                             <a-select v-model:value="ruleForm.inspectionLevel">
@@ -151,6 +163,64 @@
                         </a-form-item>
                     </a-col>
                 </a-row>
+
+                <!-- 固定数量：显示样本量 -->
+                <a-row :gutter="16" v-if="form.samplingMethod === 'FIXED_QUANTITY'">
+                    <a-col :span="12">
+                        <a-form-item label="样本量" required>
+                            <a-input-number v-model:value="ruleForm.sampleSize" :min="1" placeholder="请输入样本数量"
+                                style="width: 100%" />
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+
+                <!-- 百分比：显示样本量比率 -->
+                <a-row :gutter="16" v-if="form.samplingMethod === 'PERCENTAGE'">
+                    <a-col :span="12">
+                        <a-form-item label="样本量比率 (%)" required>
+                            <a-input-number v-model:value="ruleForm.sampleSizeRate" :min="1" :max="100"
+                                placeholder="请输入1-100的整数" style="width: 100%" />
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+
+                <!-- 国标抽样：显示抽样明细表（可编辑） -->
+                <template v-if="form.samplingMethod === 'STANDARD_BASED'">
+                    <a-divider>抽样明细</a-divider>
+                    <div style="margin-bottom: 12px;">
+                        <a-button type="dashed" size="small" @click="handleAddDetail">
+                            <PlusOutlined /> 添加明细
+                        </a-button>
+                    </div>
+                    <a-table :columns="detailColumnsEditable" :data-source="ruleForm.details" :pagination="false"
+                        size="small" bordered>
+                        <template #bodyCell="{ column, record, index }">
+                            <template v-if="column.key === 'batchSizeMin'">
+                                <a-input-number v-model:value="record.batchSizeMin" :min="1" size="small"
+                                    style="width: 100%" />
+                            </template>
+                            <template v-else-if="column.key === 'batchSizeMax'">
+                                <a-input-number v-model:value="record.batchSizeMax" :min="1" size="small"
+                                    style="width: 100%" />
+                            </template>
+                            <template v-else-if="column.key === 'sampleSizeCode'">
+                                <a-input v-model:value="record.sampleSizeCode" size="small" placeholder="A/B/C..." />
+                            </template>
+                            <template v-else-if="column.key === 'acceptanceNumber'">
+                                <a-input-number v-model:value="record.acceptanceNumber" :min="0" size="small"
+                                    style="width: 100%" />
+                            </template>
+                            <template v-else-if="column.key === 'rejectionNumber'">
+                                <a-input-number v-model:value="record.rejectionNumber" :min="1" size="small"
+                                    style="width: 100%" />
+                            </template>
+                            <template v-else-if="column.key === 'action'">
+                                <a-button type="link" danger size="small"
+                                    @click="handleRemoveDetail(index)">删除</a-button>
+                            </template>
+                        </template>
+                    </a-table>
+                </template>
             </a-form>
         </a-modal>
     </div>
@@ -227,6 +297,15 @@
         { title: 'Re(拒收)', dataIndex: 'rejectionNumber', key: 'rejectionNumber' }
     ]
 
+    const detailColumnsEditable = [
+        { title: '批量下限', key: 'batchSizeMin', width: 120 },
+        { title: '批量上限', key: 'batchSizeMax', width: 120 },
+        { title: '样本量字码', key: 'sampleSizeCode', width: 120 },
+        { title: 'Ac(接收)', key: 'acceptanceNumber', width: 100 },
+        { title: 'Re(拒收)', key: 'rejectionNumber', width: 100 },
+        { title: '操作', key: 'action', width: 80 }
+    ]
+
     const getInspTypeColor = (type: string) => {
         switch (type) {
             case 'NORMAL': return 'green'
@@ -250,6 +329,8 @@
         inspectionLevel: 'II',
         inspectionType: 'NORMAL',
         aqlValue: 1.0,
+        sampleSize: null as number | null,
+        sampleSizeRate: null as number | null,
         details: [] as any[]
     })
 
@@ -257,7 +338,8 @@
         isEditRule.value = false
         Object.assign(ruleForm, {
             id: null, ruleCode: '', ruleName: '',
-            inspectionLevel: 'II', inspectionType: 'NORMAL', aqlValue: 1.0, details: []
+            inspectionLevel: 'II', inspectionType: 'NORMAL', aqlValue: 1.0,
+            sampleSize: null, sampleSizeRate: null, details: []
         })
         ruleModalVisible.value = true
     }
@@ -268,16 +350,62 @@
         ruleModalVisible.value = true
     }
 
+    const handleAddDetail = () => {
+        ruleForm.details.push({
+            id: Date.now(),
+            batchSizeMin: 1,
+            batchSizeMax: 10,
+            sampleSizeCode: 'A',
+            acceptanceNumber: 0,
+            rejectionNumber: 1
+        })
+    }
+
+    const handleRemoveDetail = (index: number) => {
+        ruleForm.details.splice(index, 1)
+    }
+
     const saveRule = () => {
         if (!ruleForm.ruleCode || !ruleForm.ruleName) {
             message.error('请填写必填项')
             return
         }
+
+        // 根据抽样方法校验必填字段
+        if (form.samplingMethod === 'FIXED_QUANTITY' && !ruleForm.sampleSize) {
+            message.error('请输入样本量')
+            return
+        }
+        if (form.samplingMethod === 'PERCENTAGE' && !ruleForm.sampleSizeRate) {
+            message.error('请输入样本量比率')
+            return
+        }
+
+        // 国标抽样：校验批量范围和 Ac/Re
+        if (form.samplingMethod === 'STANDARD_BASED' && ruleForm.details.length > 0) {
+            // 检查批量范围是否重叠
+            const sortedDetails = [...ruleForm.details].sort((a, b) => a.batchSizeMin - b.batchSizeMin)
+            for (let i = 0; i < sortedDetails.length - 1; i++) {
+                if (sortedDetails[i].batchSizeMax >= sortedDetails[i + 1].batchSizeMin) {
+                    message.error(`批量范围存在重叠：[${sortedDetails[i].batchSizeMin}-${sortedDetails[i].batchSizeMax}] 与 [${sortedDetails[i + 1].batchSizeMin}-${sortedDetails[i + 1].batchSizeMax}]`)
+                    return
+                }
+            }
+
+            // 检查 Ac/Re 逻辑
+            for (const detail of ruleForm.details) {
+                if (detail.rejectionNumber <= detail.acceptanceNumber) {
+                    message.error(`拒收数(Re)必须大于接收数(Ac)，当前 Ac=${detail.acceptanceNumber}, Re=${detail.rejectionNumber}`)
+                    return
+                }
+            }
+        }
+
         if (isEditRule.value) {
             const idx = form.rules.findIndex(r => r.id === ruleForm.id)
             if (idx !== -1) Object.assign(form.rules[idx], { ...ruleForm, details: [...ruleForm.details] })
         } else {
-            form.rules.push({ ...ruleForm, id: Date.now().toString(), details: [] })
+            form.rules.push({ ...ruleForm, id: Date.now().toString(), details: [...ruleForm.details] })
         }
         ruleModalVisible.value = false
         message.success(isEditRule.value ? '规则已更新' : '规则已添加')
