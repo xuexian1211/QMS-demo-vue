@@ -324,20 +324,25 @@ export interface GaugeStatusLog extends BaseEntity {
 /** 物料检验规格 */
 export interface MaterialSpec extends BaseEntity {
   orgId: string
+  /** 物料ID */
   materialId: string
-  specCode: string
-  specName: string
-  specType: 'quantitative' | 'qualitative'
-  // 计量型
+  materialCode?: string
+  materialName?: string
+  /** 关联检验项目Code（通过Code关联，解耦Scheme ID） */
+  inspItemCode: string
+  inspItemName?: string
+  /** 数据类型：计量型/计数型 */
+  dataType: 'quantitative' | 'qualitative'
+  // 计量型字段
   targetValue?: number
-  upperLimit?: number
-  lowerLimit?: number
-  unit?: string
-  // 计数型
-  standardDesc?: string
+  upperLimit?: number  // USL
+  lowerLimit?: number  // LSL
+  uom?: string
+  // 计数型字段
+  standardText?: string
   standardCode?: string
   expectedValue?: string
-  sampleImage?: string
+  attachmentId?: string
   sortOrder: number
   status: 'enabled' | 'disabled'
 }
@@ -448,6 +453,126 @@ export interface InspPlan extends BaseEntity {
   /** 优先级（数值越小优先级越高） */
   priority: number
   description?: string
+}
+
+// ===============================
+// 检验方案 (InspScheme) 类型定义 [新]
+// ===============================
+
+/** 检验方案状态 */
+export type InspSchemeStatus = 'DRAFT' | 'IN_APPROVAL' | 'APPROVED' | 'OBSOLETE'
+
+/** 检验方案 - 具体的检验指令集 */
+export interface InspScheme extends BaseEntity {
+  /** 组织ID */
+  orgId: string
+  /** 方案编码 */
+  schemeCode: string
+  /** 方案名称 */
+  schemeName: string
+  /** 版本号 */
+  version: string
+  /** 状态 */
+  status: InspSchemeStatus
+  /** 源模板ID（可选，用于追溯） */
+  sourceTemplateId?: string
+  sourceTemplateName?: string
+  /** 工作流实例ID（审批流） */
+  workflowInstanceId?: string
+  /** 描述 */
+  description?: string
+  /** 明细列表 */
+  details?: InspSchemeDetail[]
+}
+
+/** 检验方案明细 - 方案的具体项目行 */
+export interface InspSchemeDetail extends BaseEntity {
+  /** 方案ID */
+  schemeId: string
+  /** 排序 */
+  sortOrder: number
+  /** 检验项目ID */
+  inspItemId: string
+  /** 检验项目名称（冗余） */
+  inspItemName: string
+  /** 检验项目编码（冗余） */
+  inspItemCode?: string
+  /** 特性分类 */
+  characteristicClass: CharacteristicClass
+  /** 抽样规则ID（可覆盖模板配置） */
+  samplingRuleId?: string
+  samplingRuleCode?: string
+  samplingRuleName?: string
+  /** 检验方法 */
+  inspMethodId?: string
+  inspMethodName?: string
+  /** 量检具类型 */
+  gaugeTypeId?: string
+  gaugeTypeName?: string
+  /** 是否启用SPC监控 */
+  spcEnabled: boolean
+  /** 是否送检实验室 */
+  labRequired: boolean
+  /** IPQC 频次配置 */
+  frequencyType?: 'PER_TIME' | 'PER_QUANTITY' | 'PER_BATCH'
+  frequencyValue?: number
+  frequencyUnit?: string
+  /** SIP文件附件 */
+  attachmentId?: string
+  /** 关联的不良现象ID列表（用于防错） */
+  relatedPhenomenonIds?: string[]
+  /** 是否来自模板（用于UI标识） */
+  fromTemplate?: boolean
+}
+
+// ===============================
+// 检验策略 (InspStrategy) 类型定义 [重构]
+// ===============================
+
+/** 匹配维度对象 */
+export interface MatchDimension {
+  /** 物料ID */
+  materialId?: string
+  /** 物料组ID */
+  materialGroupId?: string
+  /** 供应商ID */
+  supplierId?: string
+  /** 客户ID */
+  customerId?: string
+  /** 工序号 */
+  operationNo?: string
+  /** IPQC类型 */
+  ipqcType?: IpqcType
+  /** 其他扩展字段 */
+  [key: string]: any
+}
+
+/** 检验策略 - 连接业务上下文与检验方案的路由规则 */
+export interface InspStrategy extends BaseEntity {
+  /** 组织ID */
+  orgId: string
+  /** 策略编码 */
+  strategyCode: string
+  /** 策略名称 */
+  strategyName: string
+  /** 绑定的方案ID */
+  schemeId: string
+  schemeCode?: string
+  schemeName?: string
+  /** 业务上下文类型 */
+  contextType: InspContextType
+  /** 匹配维度对象（JSON结构，灵活配置） */
+  matchDimension: MatchDimension
+  /** 优先级（数值越小优先级越高） */
+  priority: number
+  /** 触发条件 */
+  triggerCondition: TriggerCondition
+  /** 触发条件值（如前N批） */
+  triggerValue?: number
+  /** 描述 */
+  description?: string
+  /** 状态 */
+  status: 'enabled' | 'disabled'
 }
 
 // ===============================
@@ -662,4 +787,43 @@ export interface DesignDocumentProgress {
   inProgressTasks: number
   pendingTasks: number
   completionRate: number
+}
+
+// ===============================
+// 物料检验规格 (MaterialSpec) 类型定义
+// ===============================
+
+/** 物料检验规格 - 定义特定物料在特定检验项目上的技术参数 */
+export interface MaterialSpec extends BaseEntity {
+  /** 组织ID（与物料对应） */
+  orgId: string
+  /** 物料ID */
+  materialId: string
+  /** 检验项目编码（通过Code关联，解耦SchemeID） */
+  inspItemCode: string
+  /** 检验项目名称（冗余） */
+  inspItemName?: string
+  /** 规格类型 */
+  specType: 'QUANTITATIVE' | 'QUALITATIVE'
+
+  // 计量型规格字段
+  /** 目标值 */
+  targetValue?: number
+  /** 上限（USL） */
+  upperLimit?: number
+  /** 下限（LSL） */
+  lowerLimit?: number
+  /** 单位 */
+  uom?: string
+
+  // 计数型规格字段
+  /** 标准描述 */
+  standardDescription?: string
+  /** 期望值 */
+  expectedValue?: string
+  /** 样板图附件ID */
+  sampleImageId?: string
+
+  /** 备注 */
+  remark?: string
 }

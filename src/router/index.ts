@@ -942,24 +942,24 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/views/inspection-model/SamplingPlanEdit.vue') }
     ]
   },
-
-
+  // 检验方案管理（新架构）
   {
     path: '/inspection-model/insp-plans',
     name: 'InspectionModelInspPlans',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案管理' },
     children: [
-      { path: '', component: () => import('@/views/inspection-model/InspPlanList.vue') }
+      { path: '', component: () => import('@/views/inspection-model/InspSchemeList.vue') }
     ]
   },
+
   {
     path: '/inspection-model/insp-plans/create',
     name: 'InspectionModelInspPlanCreate',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案-新增', hideInMenu: true },
     children: [
-      { path: '', component: () => import('@/views/inspection-model/InspPlanEdit.vue') }
+      { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
     ]
   },
   {
@@ -968,7 +968,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案-编辑', hideInMenu: true },
     children: [
-      { path: '', component: () => import('@/views/inspection-model/InspPlanEdit.vue') }
+      { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
     ]
   },
   {
@@ -977,7 +977,25 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案-查看', hideInMenu: true },
     children: [
-      { path: '', component: () => import('@/views/inspection-model/InspPlanEdit.vue') }
+      { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/insp-plans/copy/:id',
+    name: 'InspectionModelInspPlanCopy',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '检验方案-复制', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/insp-plans/:id/strategies',
+    name: 'InspectionModelInspPlanStrategies',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '检验方案-策略绑定', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
     ]
   },
 
@@ -1077,10 +1095,10 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
-  
+
   // 白名单页面，不需要登录
   const whiteList = ['/login']
-  
+
   if (whiteList.includes(to.path)) {
     // 如果已登录且访问登录页，重定向到首页
     if (isLoggedIn) {

@@ -2,66 +2,154 @@
 
 ## 1. 模型架构
 
-遵循 `insp_main_data_req.md` 的三层数据模型，核心在于 L3 层的资源组装：
+遵循 `insp_main_data_req.md` 的三层数据模型，但对 L3 层进行拆分以支持“方案内容”与“方案策略”的解耦：
 
 - **L1 基础标准库**：静态字典（项目、方法、量具、抽样规则、不良现象）。
-- **L2 检验规划层 (Templates)**：业务蓝图（InspTemplate + InspTemplateDetail）。定义“检验过程流”。
-- **L3 规格与策略层 (Spec & Strategy)**：
-    - **物料检验规格 (MaterialSpec)**：数值层。定义特定物料在特定项目下的公差。
-    - **检验方案策略 (InspPlan)**：路由层。定义上下文匹配逻辑与优先级。
+- **L2 检验规划层 (Templates)**：
+    - **InspTemplate**：标准化蓝图。
+- **L3 规格与策略层 (Execution & Strategy)**：
+    - **InspScheme (检验方案)**：**[新]** 具体的检验指令集。可基于模板创建，也可独立编辑。包含具体要查的项目列表。
+    - **InspStrategy (检验策略)**：**[重构]** 路由规则。将业务上下文（供应商、物料）映射到某个 `InspScheme`。
+    - **MaterialSpec (物料规格)**：**[增强]** 数值定义。定义特定物料在特定项目上的公差标准。
 
 ### 核心数据交互
 ```mermaid
 graph TD
-    A[业务事件: 如收货/报工] --> B{方案引擎: InspPlan}
-    B -->|匹配优先级最高者| C[检验模板: InspTemplate]
-    C -->|加载项目列表| D{规格引擎: MaterialSpec}
-    D -->|注入公差/目标值| E[生成具体的检验任务清单]
+    Event[业务事件: 收货/报工] --> Strategy{策略引擎: InspStrategy}
+    Strategy -->|匹配优先级最高者| Scheme[检验方案: InspScheme]
+    Scheme -->|加载项目列表| SpecEngine{规格引擎: MaterialSpec}
+    SpecEngine -->|注入公差/目标值| Task[生成检验任务]
+    
+    Template[检验模板: InspTemplate] -.->|复制/初始化| Scheme
 ```
 
 ## 2. 详细模型定义
 
-### 2.1 检验方案表 (QM_CFG_InspPlan)
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| contextType | Enum | IQC, IPQC, FQC, OQC |
-| materialId | String | 物料 ID |
-| materialGroupId | String | 物料组 ID |
-| supplierId | String | 供应商 ID (IQC 专用) |
-| customerId | String | 客户 ID (OQC 专用) |
-| operationNo | String | 工序号 (IPQC 专用) |
-| ipqcType | Enum | FAI(首检), PATROL(巡检), LAI(末检) (IPQC 专用) |
-| triggerCondition | Enum | ALWAYS, ON_NEW_SUPPLIER_N_BATCHES, ON_ECN_N_BATCHES |
-| priority | Integer | 匹配优先级 (数值越小越优先) |
+### 2.1 检验方案 (QM_CFG_InspScheme) **[新]**
+定义“怎么查”。它是模板的实例化，或者独立创建的方案。
 
-### 2.2 物料检验规格表 (QM_MD_MaterialSpec)
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
+| id | Long | PK |
+| schemeCode | String | 方案编码 |
+| schemeName | String | 方案名称 |
+| version | String | 版本号 |
+| status | Enum | DRAFT, APPROVED, OBSOLETE |
+| sourceTemplateId | Long | 源模板ID (可选) |
+| orgId | Long | 组织ID (强制必填，工厂隔离) |
+
+### 2.2 检验方案明细 (QM_CFG_InspSchemeDetail) **[新]**
+方案的具体项目行。**可独立于模板进行增删改**。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| schemeId | Long | FK -> InspScheme |
+| itemId | Long | FK -> InspItem (引用基础库项目) |
+| sortOrder | Integer | 排序 |
+| samplingRuleId | Long | 抽样规则 (可覆盖模板配置) |
+| inspMethodId | Long | 检验方法 |
+| isSpc | Boolean | 是否SPC |
+| characteristicClass | String | 特性分类 (Critical/Major/Minor) |
+
+### 2.3 检验策略 (QM_CFG_InspStrategy) **[原 InspPlan]**
+定义“什么时候用哪个方案”。支持 1 个方案对应 N 个策略。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| schemeId | Long | FK -> InspScheme |
+| contextType | Enum | IQC, IPQC, FQC, OQC |
+| materialId | String | 物料 ID (可选) |
+| materialGroupId | String | 物料组 ID (可选) |
+| supplierId | String | 供应商 ID (仅 IQC) |
+| customerId | String | 客户 ID (仅 OQC/FQC) |
+| operationNo | String | 工序号 (仅 IPQC) |
+| ipqcType | Enum | FAI, PATROL, LAI (仅 IPQC) |
+| priority | Integer | 优先级 (越小越高) |
+| triggerCondition | Enum | ALWAYS, ON_NEW_SUPPLIER_FIRST_N_BATCHES, ON_ECN_FIRST_N_BATCHES |
+| triggerValue | Integer | 触发阈值 |
+| orgId | Long | 组织ID |
+
+**matchDimension 示例**:
+```json
+{
+  "materialId": "M007",
+  "supplierId": "S01",
+  "operationNo": "OP10"
+}
+```
+
+### 2.4 物料检验规格 (QM_MD_MaterialSpec) **[增强]**
+定义“标准是多少”。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| orgId | Long | 组织ID (与物料对应) |
 | materialId | String | 物料 ID |
 | inspItemCode | String | 关联检验项目 Code |
-| dataType | Enum | QUANTITATIVE (计量), QUALITATIVE (计数) |
-| targetValue | Decimal | 目标值 (计量型) |
-| upperLimit | Decimal | 上限 (USL) |
-| lowerLimit | Decimal | 下限 (LSL) |
-| standardText | String | 标准描述 (计数型) |
-| expectedValue | String | 期望值 (如 OK/PASS) |
+| targetValue | Decimal | 目标值 |
+| upperLimit | Decimal | USL |
+| lowerLimit | Decimal | LSL |
+| expectedValue | String | 期望值 (计数型) |
 
-## 3. 优先级匹配逻辑增强
+### 2.5 明细不良现象绑定 (QM_CFG_DetailPhenomenon) **[新]**
+定义检验项目行可能出现的不良现象，用于快速录入。
 
-匹配引擎 `findBestPlan` 将根据输入上下文（Material, Supplier, Operation, contextType, ipqcType）计算分数。
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| schemeDetailId | Long | FK -> InspSchemeDetail |
+| phenomenonId | Long | FK -> DefectPhenomenon |
 
-**匹配得分规则（得分越高越优先，对应 priority 越小）：**
-1. **物料 + 供应商 + 工序 + IPQC类型** (精确匹配)：1000分
-2. **物料 + 供应商 (IQC常用)**：800分
-3. **物料 + 工序 (IPQC常用)**：700分
-4. **物料组 + 工序 (类通用)**：500分
-5. **物料**：300分
-6. **物料组**：200分
-7. **组织/工厂通用**：100分
+## 3. 业务流程逻辑
 
-> [!IMPORTANT]
-> 触发条件（如新供应商首 3 批）应赋予极高的优先级（或独立计算权重），以强制执行临时加严方案。
+### 3.1 创建方案
+1. 用户在“检验方案管理”页面点击“新建”。
+2. 选择“引用模板：电子料通用模板”。
+3. 系统后端复制 `InspTemplateDetail` -> `InspSchemeDetail`。
+4. 用户在界面上看到项目列表，点击“添加行”，增加“特殊外观检查”。
+5. 保存为 `InspScheme` (id=101)。
 
-## 4. UI 优化建议
-- **方案编辑页**：增加“匹配模拟器”侧边栏，输入参数即可预览将匹配到的模板及加载后的规格预览。
-- **规格管理**：支持从 Excel 批量导入物料规格（SIP 导入）。
+### 3.2 绑定策略
+1. 用户在“检验方案管理” -> “绑定策略”页签。
+2. 新增策略：
+   - 范围：物料 M001 + 供应商 S01。
+   - 方案：选择 id=101 的方案。
+   - 优先级：10。
+3. 新增策略：
+   - 范围：物料 M002 (同一类产品)。
+   - 方案：选择 id=101 的方案。
+   - 优先级：50。
+
+### 3.3 执行匹配
+1. 收货事件：物料 M001, 供应商 S01。
+2. 引擎查找 `InspStrategy`：
+   - 命中策略 1 (M001+S01)，优先级 10。
+   - 命中策略 2 (M001+Context无)，优先级低。
+3. 选定方案 id=101。
+4. 加载方案明细。
+5. 加载 M001 的 MaterialSpecs。
+6. 合并生成任务。
+
+## 4. UI 布局重构
+参考系统现有检验模板编辑器，方案编辑器采用以下布局：
+
+### 4.1 头部基础信息
+展示方案编码、名称、版本、状态、所属组织等。
+
+### 4.2 详情页签 (Tabs)
+1.  **检验项目明细**：
+    - 支持行内编辑抽样规则、检验方法、SPC开关等。
+    - 增加“从模板导入”/“同步模板”功能。
+2.  **明细不良现象绑定**：
+    - 选中左侧项目行，右侧展示/编辑绑定的不良现象库。
+3.  **策略绑定**：
+    - 管理当前方案适用的业务场景。
+    - 弹窗中提供物料组、客户、供应商、IPQC类型等过滤条件。
+4.  **物料检验规格**：
+    - 自动聚合：基于策略中绑定的物料 + 方案中的项目，自动从 `QM_MD_MaterialSpec` 获取规格。
+    - 手动维护：如果物料规格不存在，支持在方案层临时定义并保存。
+    - 反向同步：提供“同步至物料档案”按钮，将此处修改的规格写回物料主数据。
+
+## 5. 关键逻辑补充
+- **组织隔离**：所有查询和匹配均带入当前 Context 的 `orgId`。
+- **匹配仲裁**：当存在多个匹配策略时，严格按 `priority` 升序排序。
+- **规格优先级**：检验任务生成时，优先级为：物料规格(L3) > 动态规格(如果有) > 模板默认值。
