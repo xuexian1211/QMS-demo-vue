@@ -82,6 +82,11 @@
                 <PlusOutlined />
               </template>新增绑定
             </a-button>
+            <a-button size="small" style="margin-left: 8px" @click="showMatchTestModal = true">
+              <template #icon>
+                <SearchOutlined />
+              </template>匹配测试
+            </a-button>
           </div>
           <a-table :columns="bindingColumns" :data-source="bindings" row-key="id" size="small" :pagination="false">
             <template #bodyCell="{ column, record }">
@@ -170,6 +175,62 @@
         </a-tab-pane>
       </a-tabs>
     </a-card>
+
+    <!-- 匹配测试弹窗 -->
+    <a-modal v-model:visible="showMatchTestModal" title="方案匹配测试" width="700px" @ok="handleMatchTest">
+      <a-alert type="info" style="margin-bottom: 16px">
+        <template #message>
+          输入业务上下文参数，测试优先级匹配引擎将匹配到哪个检验方案。
+        </template>
+      </a-alert>
+      <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+        <a-form-item label="业务类型">
+          <a-select v-model:value="matchTestContext.contextType" placeholder="请选择">
+            <a-select-option value="IQC">IQC来料检验</a-select-option>
+            <a-select-option value="IPQC">IPQC过程检验</a-select-option>
+            <a-select-option value="FQC">FQC成品检验</a-select-option>
+            <a-select-option value="OQC">OQC出货检验</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="物料">
+          <a-select v-model:value="matchTestContext.materialId" placeholder="请选择" allow-clear>
+            <a-select-option value="MAT001">MAT001 - 电子元器件A</a-select-option>
+            <a-select-option value="MAT002">MAT002 - 电子元器件B</a-select-option>
+            <a-select-option value="MAT003">MAT003 - 塑料件C</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="供应商" v-if="matchTestContext.contextType === 'IQC'">
+          <a-select v-model:value="matchTestContext.supplierId" placeholder="请选择" allow-clear>
+            <a-select-option value="SUP001">SUP001 - 供应商甲</a-select-option>
+            <a-select-option value="SUP002">SUP002 - 供应商乙</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="工序" v-if="matchTestContext.contextType === 'IPQC'">
+          <a-select v-model:value="matchTestContext.operationNo" placeholder="请选择" allow-clear>
+            <a-select-option value="OP010">OP010 - 焊接</a-select-option>
+            <a-select-option value="OP020">OP020 - 组装</a-select-option>
+            <a-select-option value="OP030">OP030 - 测试</a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
+
+      <a-divider>匹配结果</a-divider>
+
+      <a-result v-if="matchTestResult" :status="matchTestResult.plan ? 'success' : 'warning'"
+        :title="matchTestResult.plan ? `匹配到方案: ${matchTestResult.plan.planName}` : '未找到匹配的方案'">
+        <template #subTitle v-if="matchTestResult.plan">
+          <div>
+            <a-tag v-if="matchTestResult.isExactMatch" color="green">精确匹配</a-tag>
+            <a-tag v-else color="orange">模糊匹配</a-tag>
+            <span style="margin-left: 8px">匹配类型: {{ matchTestResult.matchType }}</span>
+          </div>
+          <div style="margin-top: 8px">
+            候选方案数量: {{ matchTestResult.candidates.length }}
+          </div>
+        </template>
+      </a-result>
+      <a-empty v-else description="请填写测试条件后点击确定进行匹配" />
+    </a-modal>
   </div>
 </template>
 
@@ -177,7 +238,8 @@
   import { reactive, ref, computed, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { message, Modal } from 'ant-design-vue'
-  import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons-vue'
+  import { ArrowLeftOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons-vue'
+  import { findBestPlan, type InspectionContext, type MatchResult } from '@/utils/inspPlanMatcher'
 
   const router = useRouter()
   const route = useRoute()
@@ -186,6 +248,17 @@
   const formRef = ref()
   const saving = ref(false)
   const activeTab = ref('binding')
+
+  // 匹配测试相关
+  const showMatchTestModal = ref(false)
+  const matchTestContext = reactive({
+    contextType: 'IQC' as string,
+    materialId: undefined as string | undefined,
+    supplierId: undefined as string | undefined,
+    operationNo: undefined as string | undefined,
+    orgId: 'ORG001'
+  })
+  const matchTestResult = ref < MatchResult | null > (null)
 
   const isView = computed(() => route.path.includes('/view/'))
   const isEdit = computed(() => route.path.includes('/edit/'))
@@ -379,6 +452,31 @@
   const handleRemoveMaterialSpec = (record: any) => {
     materialSpecs.value = materialSpecs.value.filter(i => i.id !== record.id)
     message.success('已删除物料规格')
+  }
+
+  // --- 匹配测试方法 ---
+  /**
+   * 模拟的检验方案数据，用于测试优先级匹配引擎
+   */
+  const mockInspPlans = [
+    { id: 'P001', planName: 'IQC通用方案', planCode: 'IP-IQC-COMMON', templateCode: 'TPL-IQC-001', contextType: 'IQC', materialId: undefined, materialGroupId: 'MG01', supplierId: undefined, operationNo: undefined, orgId: 'ORG001', priority: 99, status: 'APPROVED' },
+    { id: 'P002', planName: 'IQC-电子元器件方案', planCode: 'IP-IQC-ELEC', templateCode: 'TPL-IQC-001', contextType: 'IQC', materialId: 'MAT001', materialGroupId: 'MG01', supplierId: undefined, operationNo: undefined, orgId: 'ORG001', priority: 50, status: 'APPROVED' },
+    { id: 'P003', planName: 'IQC-供应商甲专用方案', planCode: 'IP-IQC-SUP001', templateCode: 'TPL-IQC-002', contextType: 'IQC', materialId: 'MAT001', materialGroupId: 'MG01', supplierId: 'SUP001', operationNo: undefined, orgId: 'ORG001', priority: 10, status: 'APPROVED' },
+    { id: 'P004', planName: 'IPQC通用方案', planCode: 'IP-IPQC-COMMON', templateCode: 'TPL-IPQC-001', contextType: 'IPQC', materialId: undefined, materialGroupId: undefined, supplierId: undefined, operationNo: undefined, orgId: 'ORG001', priority: 99, status: 'APPROVED' },
+    { id: 'P005', planName: 'IPQC-焊接工序方案', planCode: 'IP-IPQC-OP010', templateCode: 'TPL-IPQC-002', contextType: 'IPQC', materialId: undefined, materialGroupId: undefined, supplierId: undefined, operationNo: 'OP010', orgId: 'ORG001', priority: 30, status: 'APPROVED' },
+    { id: 'P006', planName: 'IPQC-电子件焊接方案', planCode: 'IP-IPQC-ELEC-OP010', templateCode: 'TPL-IPQC-003', contextType: 'IPQC', materialId: 'MAT001', materialGroupId: 'MG01', supplierId: undefined, operationNo: 'OP010', orgId: 'ORG001', priority: 10, status: 'APPROVED' },
+  ]
+
+  const handleMatchTest = () => {
+    const context = {
+      contextType: matchTestContext.contextType as any,
+      materialId: matchTestContext.materialId,
+      supplierId: matchTestContext.supplierId,
+      operationNo: matchTestContext.operationNo,
+      orgId: matchTestContext.orgId
+    }
+    matchTestResult.value = findBestPlan(mockInspPlans as any, context)
+    message.success('匹配完成')
   }
 
   // 加载数据

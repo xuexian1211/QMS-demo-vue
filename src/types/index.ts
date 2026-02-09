@@ -195,17 +195,40 @@ export interface PhenomenonCauseMapping {
   causeType?: string
 }
 
+/** 检验项目分类 */
+export type InspectionItemCategory = 'dimension' | 'appearance' | 'physical_chemical' | 'functional'
+
 /** 检验项目 */
 export interface InspectionItem extends BaseEntity {
-  orgId: string
+  /** 组织ID，NULL/空表示集团级标准，有值表示工厂级私有 */
+  orgId: string | null
+  /** 项目编码，组织内唯一 */
   code: string
+  /** 项目名称 */
   name: string
+  /** 分类：尺寸/外观/理化/功能 */
+  category: InspectionItemCategory
+  /** 数据类型：计量型/计数型 */
   dataType: 'quantitative' | 'qualitative'
-  method?: string
-  standard?: string
+  /** 单位（计量型必填） */
+  uom?: string
+  /** 默认检验方法ID */
+  defaultMethodId?: string
+  /** 默认检验方法名称（冗余） */
+  defaultMethodName?: string
+  /** 默认量检具类型ID */
+  defaultInstTypeId?: string
+  /** 默认量检具类型名称（冗余） */
+  defaultInstTypeName?: string
+  /** 默认是否送检实验室 */
+  isLabTestDefault: boolean
+  /** 默认是否启用SPC监控 */
+  isSpcDefault: boolean
+  /** 描述 */
   description?: string
+  /** 状态：启用/禁用 */
   status: 'enabled' | 'disabled'
-  /** 关联的不良现象ID列表 */
+  /** 关联的不良现象ID列表（默认缺陷映射） */
   relatedDefectIds?: string[]
 }
 
@@ -319,6 +342,12 @@ export interface MaterialSpec extends BaseEntity {
   status: 'enabled' | 'disabled'
 }
 
+/** 检验模板状态 */
+export type InspTemplateStatus = 'DRAFT' | 'IN_APPROVAL' | 'APPROVED' | 'OBSOLETE'
+
+/** 特性分类 */
+export type CharacteristicClass = 'SC' | 'CC' | 'Major' | 'Minor'
+
 /** 检验模板 */
 export interface InspTemplate extends BaseEntity {
   orgId: string
@@ -326,7 +355,9 @@ export interface InspTemplate extends BaseEntity {
   templateName: string
   version: string
   inspType: 'IQC' | 'IPQC' | 'FQC' | 'OQC'
-  status: 'draft' | 'pending' | 'approved' | 'deprecated'
+  status: InspTemplateStatus
+  /** 工作流实例ID（审批流） */
+  workflowInstanceId?: string
   description?: string
   details?: InspTemplateDetail[]
 }
@@ -335,34 +366,94 @@ export interface InspTemplate extends BaseEntity {
 export interface InspTemplateDetail extends BaseEntity {
   templateId: string
   sortOrder: number
+  /** 检验项目ID */
   inspItemId: string
+  /** 检验项目名称（冗余，防止主数据修改） */
   inspItemName: string
+  /** 特性分类：SC-特殊特性/CC-关键特性/Major-主要/Minor-次要 */
+  characteristicClass: CharacteristicClass
+  /** 抽样规则编码（引用 L1 抽样规则） */
+  samplingRuleCode: string
+  samplingRuleName?: string
+  /** 检验方法（从主数据默认带出，可修改） */
   inspMethodId?: string
   inspMethodName?: string
-  samplingPlanId?: string
-  samplingPlanName?: string
+  /** 量检具类型（从主数据默认带出，可修改） */
   gaugeTypeId?: string
   gaugeTypeName?: string
-  specType: 'quantitative' | 'qualitative'
-  // 计量型规格
-  targetValue?: number
-  upperLimit?: number
-  lowerLimit?: number
-  unit?: string
-  // 计数型规格
-  standardDesc?: string
-  // IPQC 频次
-  frequencyType?: 'time' | 'quantity' | 'batch'
+  // IPQC 频次配置
+  frequencyType?: 'PER_TIME' | 'PER_QUANTITY' | 'PER_BATCH'
   frequencyValue?: number
   frequencyUnit?: string
-  // 开关配置
+  // 开关配置（从主数据默认带出，可修改）
+  /** 是否启用SPC监控 */
   spcEnabled: boolean
+  /** 是否送检实验室 */
   labRequired: boolean
+  /** SIP文件附件 */
+  attachmentId?: string
+  /** 关联的不良现象ID列表（用于防错） */
+  relatedPhenomenonIds?: string[]
+}
+
+// ===============================
+// 检验方案类型定义 (L3)
+// ===============================
+
+/** 检验方案状态 */
+export type InspPlanStatus = 'DRAFT' | 'IN_APPROVAL' | 'APPROVED' | 'OBSOLETE'
+
+/** 业务上下文类型 */
+export type InspContextType = 'IQC' | 'IPQC' | 'FQC' | 'OQC'
+
+/** IPQC 类型 */
+export type IpqcType = 'FAI' | 'PATROL' | 'LAI'
+
+/** 触发条件 */
+export type TriggerCondition = 'ALWAYS' | 'ON_NEW_SUPPLIER_FIRST_N_BATCHES' | 'ON_ECN_FIRST_N_BATCHES'
+
+/** 检验方案 */
+export interface InspPlan extends BaseEntity {
+  orgId: string
+  planCode: string
+  planName: string
+  version: string
+  status: InspPlanStatus
+  /** 关联检验模板编码 */
+  templateCode: string
+  templateName?: string
+  /** 业务上下文类型 */
+  contextType: InspContextType
+  /** 物料ID */
+  materialId?: string
+  materialCode?: string
+  materialName?: string
+  /** 物料组ID */
+  materialGroupId?: string
+  /** 供应商ID（仅 IQC） */
+  supplierId?: string
+  supplierName?: string
+  /** 客户ID（仅 OQC） */
+  customerId?: string
+  customerName?: string
+  /** 工序号（仅 IPQC） */
+  operationNo?: string
+  operationName?: string
+  /** IPQC 类型（仅 IPQC） */
+  ipqcType?: IpqcType
+  /** 触发条件 */
+  triggerCondition: TriggerCondition
+  /** 触发条件值（如前N批） */
+  triggerValue?: number
+  /** 优先级（数值越小优先级越高） */
+  priority: number
+  description?: string
 }
 
 // ===============================
 // 基础数据类型定义
 // ===============================
+
 
 /** 物料/产品 */
 export interface MaterialProduct extends BaseEntity {

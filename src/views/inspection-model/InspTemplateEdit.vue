@@ -102,18 +102,38 @@
                 <a-row :gutter="16">
                     <a-col :span="12">
                         <a-form-item label="检验项目" name="inspItemId">
-                            <a-select v-model:value="detailFormState.inspItemId" placeholder="请选择" show-search>
+                            <a-select v-model:value="detailFormState.inspItemId" placeholder="请选择" show-search
+                                @change="handleInspItemChange">
                                 <a-select-option v-for="item in inspItemOptions" :key="item.id" :value="item.id">{{
                                     item.name }}</a-select-option>
                             </a-select>
                         </a-form-item>
                     </a-col>
                     <a-col :span="12">
-                        <a-form-item label="抽样规则" name="samplingRuleId">
-                            <a-select v-model:value="detailFormState.samplingRuleId" placeholder="请选择">
-                                <a-select-option v-for="item in samplingRuleOptions" :key="item.id" :value="item.id">{{
+                        <a-form-item label="特性分类" name="characteristicClass">
+                            <a-select v-model:value="detailFormState.characteristicClass" placeholder="请选择">
+                                <a-select-option value="SC">SC - 特殊特性</a-select-option>
+                                <a-select-option value="CC">CC - 关键特性</a-select-option>
+                                <a-select-option value="Major">Major - 主要</a-select-option>
+                                <a-select-option value="Minor">Minor - 次要</a-select-option>
+                            </a-select>
+                        </a-form-item>
+                    </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                    <a-col :span="12">
+                        <a-form-item label="抽样规则" name="samplingRuleCode">
+                            <a-select v-model:value="detailFormState.samplingRuleCode" placeholder="请选择">
+                                <a-select-option v-for="item in samplingRuleOptions" :key="item.code"
+                                    :value="item.code">{{
                                     item.name }}</a-select-option>
                             </a-select>
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                        <a-form-item label="关联不良现象">
+                            <a-button type="dashed" @click="handleConfigPhenomenon">配置 ({{
+                                detailFormState.relatedPhenomenonIds?.length || 0 }})</a-button>
                         </a-form-item>
                     </a-col>
                 </a-row>
@@ -163,15 +183,19 @@
                 </a-row>
 
                 <a-row :gutter="16">
-                    <a-col :span="8">
+                    <a-col :span="6">
                         <a-form-item label="SPC控制">
                             <a-switch v-model:checked="detailFormState.spcEnabled" />
                         </a-form-item>
                     </a-col>
-                    <a-col :span="8">
+                    <a-col :span="6">
                         <a-form-item label="实验室检验">
                             <a-switch v-model:checked="detailFormState.labRequired" />
                         </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                        <a-alert v-if="detailFormState.autoFilledHint" :message="detailFormState.autoFilledHint"
+                            type="info" show-icon closable />
                     </a-col>
                 </a-row>
 
@@ -209,23 +233,35 @@
         return isEdit.value ? '编辑检验模板' : '新增检验模板'
     })
 
-    // 下拉选项
+    // 下拉选项 - 模拟主数据（包含默认方法、量具等）
     const inspItemOptions = ref([
-        { id: '1', name: '长度' },
-        { id: '2', name: '外观' },
-        { id: '3', name: '硬度' },
+        { id: '1', name: '长度', defaultMethodId: '1', defaultMethodName: '卡尺测量', defaultGaugeId: '1', defaultGaugeName: '游标卡尺', defaultSpc: true, defaultLab: false },
+        { id: '2', name: '外观', defaultMethodId: '2', defaultMethodName: '目视检查', defaultGaugeId: '', defaultGaugeName: '', defaultSpc: false, defaultLab: false },
+        { id: '3', name: '硬度', defaultMethodId: '3', defaultMethodName: '硬度计测试', defaultGaugeId: '3', defaultGaugeName: '洛氏硬度计', defaultSpc: true, defaultLab: true },
     ])
     const samplingRuleOptions = ref([
-        { id: '1', name: 'AQL 0.65 Level II' },
-        { id: '2', name: '全检' },
+        { code: 'AQL-GB2828-L2-N-0.65', name: 'AQL 0.65 Level II 正常' },
+        { code: 'AQL-GB2828-L2-S-0.65', name: 'AQL 0.65 Level II 加严' },
+        { code: 'FULL', name: '全检' },
+        { code: 'FIXED-5', name: '固定抽检 5 件' },
     ])
     const inspMethodOptions = ref([
         { id: '1', name: '卡尺测量' },
         { id: '2', name: '目视检查' },
+        { id: '3', name: '硬度计测试' },
     ])
     const gaugeTypeOptions = ref([
         { id: '1', name: '游标卡尺' },
         { id: '2', name: '千分尺' },
+        { id: '3', name: '洛氏硬度计' },
+    ])
+    // 不良现象选项（用于关联配置）
+    const phenomenonOptions = ref([
+        { id: 'P1', name: '尺寸偏大', category: '尺寸类' },
+        { id: 'P2', name: '尺寸偏小', category: '尺寸类' },
+        { id: 'P3', name: '划伤', category: '外观类' },
+        { id: 'P4', name: '磕伤', category: '外观类' },
+        { id: 'P5', name: '硬度不足', category: '理化类' },
     ])
 
     // 表单状态
@@ -250,22 +286,27 @@
         id: null as string | null,
         inspItemId: undefined as string | undefined,
         inspItemName: '',
-        samplingRuleId: undefined as string | undefined,
+        characteristicClass: 'Major' as 'SC' | 'CC' | 'Major' | 'Minor',
+        samplingRuleCode: undefined as string | undefined,
         samplingRuleName: '',
         inspMethodId: undefined as string | undefined,
         inspMethodName: '',
         gaugeTypeId: undefined as string | undefined,
         gaugeTypeName: '',
-        freqType: 'PerBatch',
+        freqType: 'PER_BATCH' as 'PER_TIME' | 'PER_QUANTITY' | 'PER_BATCH',
         freqValue: 1,
         freqUnit: '',
         spcEnabled: false,
         labRequired: false,
-        remark: ''
+        remark: '',
+        relatedPhenomenonIds: [] as string[],
+        autoFilledHint: '' // 用于显示自动填充提示
     })
 
     const detailRules = {
-        inspItemId: [{ required: true, message: '请选择检验项目', trigger: 'change' }]
+        inspItemId: [{ required: true, message: '请选择检验项目', trigger: 'change' }],
+        characteristicClass: [{ required: true, message: '请选择特性分类', trigger: 'change' }],
+        samplingRuleCode: [{ required: true, message: '请选择抽样规则', trigger: 'change' }]
     }
 
     // 明细表格列
@@ -273,12 +314,12 @@
         const cols = [
             { title: '序号', key: 'seq', width: 60 },
             { title: '检验项目', dataIndex: 'inspItemName', key: 'inspItemName', width: 120 },
+            { title: '特性分类', dataIndex: 'characteristicClass', key: 'characteristicClass', width: 90 },
             { title: '抽样规则', dataIndex: 'samplingRuleName', key: 'samplingRuleName', width: 150 },
-            { title: '检验方法', dataIndex: 'inspMethodName', key: 'inspMethodName', width: 120 },
-            { title: '量检具类型', dataIndex: 'gaugeTypeName', key: 'gaugeTypeName', width: 100 },
-            { title: '频次', dataIndex: 'freqDesc', key: 'freqDesc', width: 100 },
-            { title: 'SPC', key: 'spcEnabled', width: 60 },
-            { title: '实验室', key: 'labRequired', width: 70 },
+            { title: '检验方法', dataIndex: 'inspMethodName', key: 'inspMethodName', width: 100 },
+            { title: '量检具', dataIndex: 'gaugeTypeName', key: 'gaugeTypeName', width: 90 },
+            { title: 'SPC', key: 'spcEnabled', width: 50 },
+            { title: '实验室', key: 'labRequired', width: 60 },
         ]
         if (!isView.value) {
             cols.push({ title: '操作', key: 'action', width: 180 })
@@ -288,12 +329,12 @@
 
     // 状态显示
     const getStatusColor = (status: string) => {
-        const colorMap: Record<string, string> = { Draft: 'default', Pending: 'processing', Approved: 'success', Obsolete: 'error' }
+        const colorMap: Record<string, string> = { DRAFT: 'default', IN_APPROVAL: 'processing', APPROVED: 'success', OBSOLETE: 'error' }
         return colorMap[status] || 'default'
     }
 
     const getStatusText = (status: string) => {
-        const textMap: Record<string, string> = { Draft: '草稿', Pending: '审批中', Approved: '已批准', Obsolete: '作废' }
+        const textMap: Record<string, string> = { DRAFT: '草稿', IN_APPROVAL: '审批中', APPROVED: '已批准', OBSOLETE: '已作废' }
         return textMap[status] || status
     }
 
@@ -325,19 +366,48 @@
             id: null,
             inspItemId: undefined,
             inspItemName: '',
-            samplingRuleId: undefined,
+            characteristicClass: 'Major',
+            samplingRuleCode: undefined,
             samplingRuleName: '',
             inspMethodId: undefined,
             inspMethodName: '',
             gaugeTypeId: undefined,
             gaugeTypeName: '',
-            freqType: 'PerBatch',
+            freqType: 'PER_BATCH',
             freqValue: 1,
             freqUnit: '',
             spcEnabled: false,
             labRequired: false,
-            remark: ''
+            remark: '',
+            relatedPhenomenonIds: [],
+            autoFilledHint: ''
         })
+    }
+
+    /**
+     * 选择检验项目后自动填充默认配置
+     * NOTE: 这是防错设计的核心，从主数据自动带出默认方法、量具、SPC/实验室开关
+     */
+    const handleInspItemChange = (itemId: string) => {
+        const item = inspItemOptions.value.find(i => i.id === itemId)
+        if (item) {
+            detailFormState.inspItemName = item.name
+            detailFormState.inspMethodId = item.defaultMethodId || undefined
+            detailFormState.inspMethodName = item.defaultMethodName || ''
+            detailFormState.gaugeTypeId = item.defaultGaugeId || undefined
+            detailFormState.gaugeTypeName = item.defaultGaugeName || ''
+            detailFormState.spcEnabled = item.defaultSpc ?? false
+            detailFormState.labRequired = item.defaultLab ?? false
+            detailFormState.autoFilledHint = `已从主数据自动带出默认配置（方法: ${item.defaultMethodName || '无'}, 量具: ${item.defaultGaugeName || '无'}）`
+        }
+    }
+
+    /**
+     * 配置关联的不良现象（用于执行时的防错过滤）
+     */
+    const handleConfigPhenomenon = () => {
+        // TODO: 弹出穿梭框或多选弹窗，选择关联的不良现象
+        message.info('功能开发中：配置该检验项目关联的不良现象，用于检验执行时的防错过滤')
     }
 
     const handleAddDetail = () => {
@@ -383,18 +453,15 @@
 
             // 获取名称
             detailFormState.inspItemName = inspItemOptions.value.find(i => i.id === detailFormState.inspItemId)?.name || ''
-            detailFormState.samplingRuleName = samplingRuleOptions.value.find(i => i.id === detailFormState.samplingRuleId)?.name || ''
+            detailFormState.samplingRuleName = samplingRuleOptions.value.find(i => i.code === detailFormState.samplingRuleCode)?.name || ''
             detailFormState.inspMethodName = inspMethodOptions.value.find(i => i.id === detailFormState.inspMethodId)?.name || ''
             detailFormState.gaugeTypeName = gaugeTypeOptions.value.find(i => i.id === detailFormState.gaugeTypeId)?.name || ''
 
-            // 频次描述
-            const freqDesc = detailFormState.freqValue ? `${detailFormState.freqValue}${detailFormState.freqUnit || ''}` : ''
-
             if (isEditDetail.value) {
                 const idx = detailData.value.findIndex(i => i.id === detailFormState.id)
-                if (idx > -1) Object.assign(detailData.value[idx], { ...detailFormState, freqDesc })
+                if (idx > -1) Object.assign(detailData.value[idx], { ...detailFormState })
             } else {
-                detailData.value.push({ ...detailFormState, id: Date.now().toString(), freqDesc })
+                detailData.value.push({ ...detailFormState, id: Date.now().toString() })
             }
             message.success('保存成功')
             detailModalVisible.value = false
