@@ -942,17 +942,17 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/views/inspection-model/SamplingPlanEdit.vue') }
     ]
   },
-  // 检验方案管理（新架构）
+
+
   {
     path: '/inspection-model/insp-plans',
     name: 'InspectionModelInspPlans',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案管理' },
     children: [
-      { path: '', component: () => import('@/views/inspection-model/InspSchemeList.vue') }
+      { path: '', component: () => import('@/views/inspection-model/InspPlanList.vue') }
     ]
   },
-
   {
     path: '/inspection-model/insp-plans/create',
     name: 'InspectionModelInspPlanCreate',
@@ -976,24 +976,6 @@ const routes: RouteRecordRaw[] = [
     name: 'InspectionModelInspPlanView',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案-查看', hideInMenu: true },
-    children: [
-      { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
-    ]
-  },
-  {
-    path: '/inspection-model/insp-plans/copy/:id',
-    name: 'InspectionModelInspPlanCopy',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '检验方案-复制', hideInMenu: true },
-    children: [
-      { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
-    ]
-  },
-  {
-    path: '/inspection-model/insp-plans/:id/strategies',
-    name: 'InspectionModelInspPlanStrategies',
-    component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '检验方案-策略绑定', hideInMenu: true },
     children: [
       { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
     ]

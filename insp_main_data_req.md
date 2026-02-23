@@ -506,15 +506,16 @@
   -  contextType 决定了哪些关联字段有效。
   -  事件驱动的 triggerCondition 应设置更高的 priority 。
   -  contextType 是此表的核心，决定了哪些关联字段有效。
-     - 当 contextType = IQC 时， supplierId 有效。
-     - 当 contextType = IPQC 时， operationNo 和 ipqcType 有效。
-     - 当 contextType = FQC 时， customerId 有效。
+     - 当 contextType = IQC 时， supplierId 和 materialId/materialGroupId 有效。
+     - 当 contextType = IPQC 时， operationNo、ipqcType 和 materialId 有效。
+     - 当 contextType = FQC 时，由于是内部成品检验，通常无 supplierId 和 customerId，主要为 materialId 有效。
+     - 当 contextType = OQC 时， customerId 和 materialId 有效，无 supplierId。
   -  priority 是实现业务例外的核心，必须为不同层级的绑定设置不同的、可区分的优先级数值。
 - 示例: 
   - IQC: (801, 1, 608, 'IQC', 'M007', NULL, 'S03', NULL, NULL, NULL, 'ON_NEW_SUPPLIER_FIRST_N_BATCHES', 3, 5) 
   - IPQC首件检: (planId:606, ctx:IPQC, matId:M007, opNo:OP30, ipqcType:FAI, prio:10) -> M007在OP30的首件检，使用 606 方案（通常检验项目最多）。
   - IPQC巡检: (planId:607, ctx:IPQC, matId:M007, opNo:OP30, ipqcType:PATROL, prio:12) -> M007在OP30的巡检，使用 607 方案（抽检关键尺寸）。
-  - IQC: (planId:602, ctx:IQC, matId:M007, supId:S02, prio:20) -> S02供应商的M007来料，使用 602 加严方案。
-  - FQC: (planId:604, ctx:FQC, matId:M007, custId:CUST-01, prio:10) -> 发往CUST-01客户的M007，使用 604 特殊包装方案。
+  - FQC: (planId:604, ctx:FQC, matId:M007, prio:20) -> M007的成品内部常规检验使用 604 方案。
+  - OQC: (planId:605, ctx:OQC, matId:M007, custId:CUST-01, prio:10) -> 发往CUST-01客户的出货产品M007，使用 605 特殊包装与出货要求方案。
 - 业务场景: 一家新供应商 S03 首次送来物料 M007 到合肥工厂( orgId=1 )。ERP将收货信息推送到QMS，QMS匹配到上述示例的绑定规则（优先级5），自动激活了“超加严”检验方案 608 。当第4批货到达时，该规则自动失效，系统会匹配到优先级较低的常规检验规则，实现了无人干预的风险转移。
 

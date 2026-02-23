@@ -32,8 +32,18 @@ function getAllChanges() {
 
     const dirs = fs.readdirSync(OPENSPEC_DIR)
 
-    for (const dir of dirs) {
-        const changePath = path.join(OPENSPEC_DIR, dir)
+    // 也读取 archive 目录
+    const archiveDir = path.join(OPENSPEC_DIR, 'archive')
+    let allDirs = dirs.map(dir => ({ baseDir: OPENSPEC_DIR, dir }))
+    if (fs.existsSync(archiveDir)) {
+        const archivedDirs = fs.readdirSync(archiveDir)
+        allDirs = allDirs.concat(archivedDirs.map(dir => ({ baseDir: archiveDir, dir })))
+    }
+
+    for (const { baseDir, dir } of allDirs) {
+        if (dir === 'archive' && baseDir === OPENSPEC_DIR) continue; // skip the archive folder itself
+
+        const changePath = path.join(baseDir, dir)
         const stat = fs.statSync(changePath)
 
         if (!stat.isDirectory()) continue
@@ -244,24 +254,36 @@ function detectUpdateType(title, proposal) {
  */
 function extractAffectedModules(proposal) {
     const modules = new Set()
-    const text = proposal.what + proposal.impact
+    const text = proposal.title + proposal.what + proposal.impact
 
-    const moduleKeywords = [
-        '质量检验',
-        '供方管理',
-        '系统管理',
-        '数据应用',
-        '权限管理',
-        '流程管理',
-        '客诉管理',
-        '质量工具'
-    ]
+    const moduleMap = {
+        '检验': '质量检验',
+        '抽样': '质量检验',
+        'IQC': '质量检验',
+        'OQC': '质量检验',
+        'IPQC': '质量检验',
+        'FQC': '质量检验',
+        '量检具': '质量工具',
+        '系统': '系统管理',
+        '日志': '系统管理',
+        '字典': '系统管理',
+        '供方': '供方管理',
+        '供应商': '供方管理',
+        '数据': '数据应用',
+        '流程': '流程管理',
+        '客诉': '客诉管理',
+        '权限': '权限管理'
+    }
 
-    moduleKeywords.forEach(keyword => {
+    Object.entries(moduleMap).forEach(([keyword, module]) => {
         if (text.includes(keyword)) {
-            modules.add(keyword)
+            modules.add(module)
         }
     })
+
+    if (modules.size === 0) {
+        modules.add('通用模块')
+    }
 
     return Array.from(modules)
 }

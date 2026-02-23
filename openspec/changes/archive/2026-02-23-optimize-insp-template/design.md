@@ -35,8 +35,8 @@ graph TD
 | schemeName | String | 方案名称 |
 | version | String | 版本号 |
 | status | Enum | DRAFT, APPROVED, OBSOLETE |
-| sourceTemplateId | Long | 源模板ID (可选) |
-| orgId | Long | 组织ID (强制必填，工厂隔离) |
+| sourceTemplateId | Long | 源模板ID (可选，用于追溯) |
+| orgId | Long | 组织ID |
 
 ### 2.2 检验方案明细 (QM_CFG_InspSchemeDetail) **[新]**
 方案的具体项目行。**可独立于模板进行增删改**。
@@ -56,18 +56,12 @@ graph TD
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| schemeId | Long | FK -> InspScheme |
+| schemeId | Long | FK -> InspScheme (绑定的方案) |
 | contextType | Enum | IQC, IPQC, FQC, OQC |
-| materialId | String | 物料 ID (可选) |
-| materialGroupId | String | 物料组 ID (可选) |
-| supplierId | String | 供应商 ID (仅 IQC) |
-| customerId | String | 客户 ID (仅 OQC/FQC) |
-| operationNo | String | 工序号 (仅 IPQC) |
-| ipqcType | Enum | FAI, PATROL, LAI (仅 IPQC) |
+| matchDimension | JSON | 匹配维度对象 (替代扁平字段，更灵活) |
 | priority | Integer | 优先级 (越小越高) |
-| triggerCondition | Enum | ALWAYS, ON_NEW_SUPPLIER_FIRST_N_BATCHES, ON_ECN_FIRST_N_BATCHES |
-| triggerValue | Integer | 触发阈值 |
-| orgId | Long | 组织ID |
+| triggerCondition | Enum | ALWAYS, NEW_SUPPLIER_BATCH, ECN_BATCH |
+| triggerValue | Integer | 触发阈值 (如前3批) |
 
 **matchDimension 示例**:
 ```json
@@ -83,21 +77,12 @@ graph TD
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| orgId | Long | 组织ID (与物料对应) |
 | materialId | String | 物料 ID |
-| inspItemCode | String | 关联检验项目 Code |
+| inspItemCode | String | 关联检验项目 Code (通过 Code 关联，解耦 Scheme ID) |
 | targetValue | Decimal | 目标值 |
 | upperLimit | Decimal | USL |
 | lowerLimit | Decimal | LSL |
-| expectedValue | String | 期望值 (计数型) |
-
-### 2.5 明细不良现象绑定 (QM_CFG_DetailPhenomenon) **[新]**
-定义检验项目行可能出现的不良现象，用于快速录入。
-
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| schemeDetailId | Long | FK -> InspSchemeDetail |
-| phenomenonId | Long | FK -> DefectPhenomenon |
+| expectedValue | String | 期望值 |
 
 ## 3. 业务流程逻辑
 
@@ -129,27 +114,7 @@ graph TD
 5. 加载 M001 的 MaterialSpecs。
 6. 合并生成任务。
 
-## 4. UI 布局重构
-参考系统现有检验模板编辑器，方案编辑器采用以下布局：
-
-### 4.1 头部基础信息
-展示方案编码、名称、版本、状态、所属组织等。
-
-### 4.2 详情页签 (Tabs)
-1.  **检验项目明细**：
-    - 支持行内编辑抽样规则、检验方法、SPC开关等。
-    - 增加“从模板导入”/“同步模板”功能。
-2.  **明细不良现象绑定**：
-    - 选中左侧项目行，右侧展示/编辑绑定的不良现象库。
-3.  **策略绑定**：
-    - 管理当前方案适用的业务场景。
-    - 弹窗中提供物料组、客户、供应商、IPQC类型等过滤条件。
-4.  **物料检验规格**：
-    - 自动聚合：基于策略中绑定的物料 + 方案中的项目，自动从 `QM_MD_MaterialSpec` 获取规格。
-    - 手动维护：如果物料规格不存在，支持在方案层临时定义并保存。
-    - 反向同步：提供“同步至物料档案”按钮，将此处修改的规格写回物料主数据。
-
-## 5. 关键逻辑补充
-- **组织隔离**：所有查询和匹配均带入当前 Context 的 `orgId`。
-- **匹配仲裁**：当存在多个匹配策略时，严格按 `priority` 升序排序。
-- **规格优先级**：检验任务生成时，优先级为：物料规格(L3) > 动态规格(如果有) > 模板默认值。
+## 4. UI 优化建议
+- **方案与策略分离**：左侧列表展示“方案”，右侧 Tab 展示“方案内容”和“适用策略”。
+- **差异化标识**：在方案编辑中，标出来自模板的行和新增的行。
+- **模拟器**：在绑定页面提供“输入上下文 -> 输出方案”的实时测试。
