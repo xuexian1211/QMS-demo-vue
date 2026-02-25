@@ -28,6 +28,20 @@
             </a-menu>
           </template>
         </a-dropdown>
+        <a-dropdown>
+          <a-button>
+            <template #icon>
+              <ImportOutlined />
+            </template>导入
+            <DownOutlined />
+          </a-button>
+          <template #overlay>
+            <a-menu @click="handleImportMenu">
+              <a-menu-item key="template">下载导入模板</a-menu-item>
+              <a-menu-item key="upload">上传Excel文件</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
         <a-button @click="handleExport">
           <template #icon>
             <ExportOutlined />
@@ -41,8 +55,19 @@
       </a-space>
     </div>
 
+    <!-- 隐藏的文件上传 -->
+    <input ref="importFileRef" type="file" accept=".xlsx,.xls,.csv" style="display:none" @change="handleImportFile" />
+
     <a-card class="search-card" :bordered="false">
       <a-form layout="inline" :model="searchForm">
+        <a-form-item label="所属组织">
+          <a-select v-model:value="searchForm.orgId" style="width: 140px" placeholder="全部" allow-clear mode="multiple"
+            :max-tag-count="1">
+            <a-select-option value="Group">集团</a-select-option>
+            <a-select-option value="1">合肥工厂</a-select-option>
+            <a-select-option value="2">芜湖工厂</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item label="供应商编码">
           <a-input v-model:value="searchForm.supplierCode" placeholder="请输入" allow-clear />
         </a-form-item>
@@ -82,6 +107,11 @@
         :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }" :pagination="pagination"
         @change="handleTableChange">
         <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'orgId'">
+            <a-tag :color="getOrgColor(record.orgId)">
+              {{ getOrgName(record.orgId) }}
+            </a-tag>
+          </template>
           <template v-if="column.key === 'supplierLevel'">
             <a-tag :color="getSupplierLevelColor(record.supplierLevel)">
               {{ getSupplierLevelText(record.supplierLevel) }}
@@ -118,12 +148,21 @@
       :footer="isView ? null : undefined">
       <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
         <a-row :gutter="16">
-          <a-col :span="12">
+          <a-col :span="8">
+            <a-form-item label="所属组织" name="orgId">
+              <a-select v-model:value="formData.orgId" placeholder="请选择所属组织" :disabled="isView">
+                <a-select-option value="Group">集团（全局）</a-select-option>
+                <a-select-option value="1">合肥工厂</a-select-option>
+                <a-select-option value="2">芜湖工厂</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
             <a-form-item label="供应商编码" name="supplierCode">
               <a-input v-model:value="formData.supplierCode" placeholder="请输入供应商编码" :disabled="isView" />
             </a-form-item>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="8">
             <a-form-item label="供应商名称" name="supplierName">
               <a-input v-model:value="formData.supplierName" placeholder="请输入供应商名称" :disabled="isView" />
             </a-form-item>
@@ -217,12 +256,31 @@
         <a-form-item label="备注" name="remark">
           <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="3" :disabled="isView" />
         </a-form-item>
+
+        <a-divider>资质附件管理</a-divider>
+        <a-form-item label="资质证明">
+          <a-upload v-model:file-list="formData.qualifications" :disabled="isView" :before-upload="() => false"
+            list-type="text">
+            <a-button :disabled="isView">
+              <UploadOutlined /> 上传资质证明
+            </a-button>
+          </a-upload>
+        </a-form-item>
+        <a-form-item label="资质有效期">
+          <a-date-picker v-model:value="formData.qualificationExpiry" :disabled="isView" placeholder="请选择有效期"
+            style="width: 100%" />
+        </a-form-item>
+        <a-alert v-if="formData.qualificationExpiry && isQualificationExpired" message="资质证明已过期，请及时更新！" type="error"
+          show-icon style="margin-bottom: 16px;" />
       </a-form>
     </a-modal>
 
     <!-- 查看详情模态框 -->
     <a-modal v-model:visible="viewModalVisible" title="供应商详情" width="900px" :footer="null">
       <a-descriptions :column="3" bordered>
+        <a-descriptions-item label="所属组织">
+          <a-tag :color="getOrgColor(viewData.orgId)">{{ getOrgName(viewData.orgId) }}</a-tag>
+        </a-descriptions-item>
         <a-descriptions-item label="供应商编码">{{ viewData.supplierCode }}</a-descriptions-item>
         <a-descriptions-item label="供应商名称">{{ viewData.supplierName }}</a-descriptions-item>
         <a-descriptions-item label="供应商等级">
@@ -266,10 +324,13 @@
     EditOutlined,
     DeleteOutlined,
     ExportOutlined,
+    ImportOutlined,
+    UploadOutlined,
     ReloadOutlined,
     DownOutlined
   } from '@ant-design/icons-vue'
   import { useExport } from '@/utils/excel'
+  import dayjs from 'dayjs'
 
   // 响应式数据
   const loading = ref(false)
@@ -279,9 +340,17 @@
   const isView = ref(false)
   const formRef = ref()
   const selectedRowKeys = ref([])
+  const importFileRef = ref()
+
+  // 资质过期计算
+  const isQualificationExpired = computed(() => {
+    if (!formData.qualificationExpiry) return false
+    return dayjs(formData.qualificationExpiry).isBefore(dayjs())
+  })
 
   // 搜索表单
   const searchForm = reactive({
+    orgId: undefined,
     supplierCode: '',
     supplierName: '',
     supplierLevel: undefined,
@@ -292,6 +361,7 @@
   // 表单数据
   const formData = reactive({
     id: '',
+    orgId: 'Group',
     supplierCode: '',
     supplierName: '',
     supplierLevel: 'B',
@@ -306,11 +376,14 @@
     bankName: '',
     bankAccount: '',
     remark: '',
-    status: '1'
+    status: '1',
+    qualifications: [],
+    qualificationExpiry: null
   })
 
   // 表格列定义
   const columns = [
+    { title: '所属组织', dataIndex: 'orgId', key: 'orgId', width: 100 },
     { title: '供应商编码', dataIndex: 'supplierCode', key: 'supplierCode', width: 120 },
     { title: '供应商名称', dataIndex: 'supplierName', key: 'supplierName', width: 180 },
     { title: '供应商等级', dataIndex: 'supplierLevel', key: 'supplierLevel', width: 100 },
@@ -325,9 +398,9 @@
 
   // 表格数据
   const dataSource = ref([
-    { id: '1', supplierCode: 'SUP001', supplierName: '富士康科技集团', supplierLevel: 'A', supplyType: 'equipment', creditLevel: 4, cooperationYears: 5, creditCode: '91440300617505445L', legalPerson: '郭台铭', phone: '0755-28128888', email: 'supplier@foxconn.com', address: '广东省深圳市宝安区龙华街道富士康科技园', bankName: '中国建设银行深圳分行', bankAccount: '622700720001234567', remark: '主要设备供应商', status: '1', createTime: '2024-01-15 10:30:00', updateTime: '2024-01-15 10:30:00' },
-    { id: '2', supplierCode: 'SUP002', supplierName: '中芯国际集成电路制造有限公司', supplierLevel: 'A', supplyType: 'raw_material', creditLevel: 4.5, cooperationYears: 3, creditCode: '91310115764784131X', legalPerson: '周子学', phone: '021-38610000', email: 'contact@smics.com', address: '上海市浦东新区张江路18号', bankName: '中国工商银行上海分行', bankAccount: '622202100001234567', remark: '芯片原材料供应商', status: '1', createTime: '2024-01-15 10:35:00', updateTime: '2024-01-15 10:35:00' },
-    { id: '3', supplierCode: 'SUP003', supplierName: '京东方科技集团股份有限公司', supplierLevel: 'B', supplyType: 'raw_material', creditLevel: 3.5, cooperationYears: 2, creditCode: '91110108101738232B', legalPerson: '陈炎顺', phone: '010-64318888', email: 'supplier@boe.com.cn', address: '北京市朝阳区酒仙桥路10号', bankName: '中国银行北京分行', bankAccount: '621790100001234567', remark: '显示屏供应商', status: '1', createTime: '2024-01-15 10:40:00', updateTime: '2024-01-15 10:40:00' }
+    { id: '1', orgId: 'Group', supplierCode: 'SUP001', supplierName: '富士康科技集团', supplierLevel: 'A', supplyType: 'equipment', creditLevel: 4, cooperationYears: 5, creditCode: '91440300617505445L', legalPerson: '郭台铭', phone: '0755-28128888', email: 'supplier@foxconn.com', address: '广东省深圳市宝安区龙华街道富士康科技园', bankName: '中国建设银行深圳分行', bankAccount: '622700720001234567', remark: '主要设备供应商', status: '1', createTime: '2024-01-15 10:30:00', updateTime: '2024-01-15 10:30:00', qualifications: [], qualificationExpiry: null },
+    { id: '2', orgId: '1', supplierCode: 'SUP002', supplierName: '中芯国际集成电路制造有限公司', supplierLevel: 'A', supplyType: 'raw_material', creditLevel: 4.5, cooperationYears: 3, creditCode: '91310115764784131X', legalPerson: '周子学', phone: '021-38610000', email: 'contact@smics.com', address: '上海市浦东新区张江路18号', bankName: '中国工商银行上海分行', bankAccount: '622202100001234567', remark: '芯片原材料供应商', status: '1', createTime: '2024-01-15 10:35:00', updateTime: '2024-01-15 10:35:00', qualifications: [], qualificationExpiry: null },
+    { id: '3', orgId: '2', supplierCode: 'SUP003', supplierName: '京东方科技集团股份有限公司', supplierLevel: 'B', supplyType: 'raw_material', creditLevel: 3.5, cooperationYears: 2, creditCode: '91110108101738232B', legalPerson: '陈炎顺', phone: '010-64318888', email: 'supplier@boe.com.cn', address: '北京市朝阳区酒仙桥路10号', bankName: '中国银行北京分行', bankAccount: '621790100001234567', remark: '显示屏供应商', status: '1', createTime: '2024-01-15 10:40:00', updateTime: '2024-01-15 10:40:00', qualifications: [], qualificationExpiry: null }
   ])
 
   // 分页配置
@@ -349,6 +422,17 @@
     supplierLevel: [{ required: true, message: '请选择供应商等级', trigger: 'change' }],
     supplyType: [{ required: true, message: '请选择供应类型', trigger: 'change' }],
     phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }]
+  }
+
+  // 多组织工具方法
+  const getOrgName = (orgId) => {
+    const map = { 'Group': '集团', '1': '合肥工厂', '2': '芜湖工厂' }
+    return map[orgId] || '未知'
+  }
+
+  const getOrgColor = (orgId) => {
+    const map = { 'Group': 'purple', '1': 'blue', '2': 'cyan' }
+    return map[orgId] || 'default'
   }
 
   // 工具方法
@@ -390,7 +474,7 @@
   }
 
   const resetSearch = () => {
-    Object.assign(searchForm, { supplierCode: '', supplierName: '', supplierLevel: undefined, supplyType: undefined, status: undefined })
+    Object.assign(searchForm, { orgId: undefined, supplierCode: '', supplierName: '', supplierLevel: undefined, supplyType: undefined, status: undefined })
     handleSearch()
   }
 
@@ -488,9 +572,10 @@
 
   const resetForm = () => {
     Object.assign(formData, {
-      id: '', supplierCode: '', supplierName: '', supplierLevel: 'B', supplyType: 'raw_material',
+      id: '', orgId: 'Group', supplierCode: '', supplierName: '', supplierLevel: 'B', supplyType: 'raw_material',
       creditLevel: 3, cooperationYears: 1, creditCode: '', legalPerson: '', phone: '', email: '',
-      address: '', bankName: '', bankAccount: '', remark: '', status: '1'
+      address: '', bankName: '', bankAccount: '', remark: '', status: '1',
+      qualifications: [], qualificationExpiry: null
     })
     formRef.value?.resetFields()
   }
@@ -532,10 +617,33 @@
     })
   }
 
+  // 导入功能
+  const handleImportMenu = ({ key }) => {
+    if (key === 'template') {
+      message.success('导入模板下载功能（供应商编码、供应商名称、等级、供应类型、联系电话等列）')
+    } else if (key === 'upload') {
+      importFileRef.value?.click()
+    }
+  }
+
+  const handleImportFile = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    message.info(`正在解析文件: ${file.name}`)
+    setTimeout(() => {
+      message.success('导入完成（前端模拟），共处理 0 条数据')
+    }, 1000)
+    e.target.value = ''
+  }
+
   const fetchData = () => {
     loading.value = true
     setTimeout(() => {
       let filteredData = [...dataSource.value]
+      // 多组织过滤
+      if (searchForm.orgId && searchForm.orgId.length > 0) {
+        filteredData = filteredData.filter(item => searchForm.orgId.includes(item.orgId))
+      }
       if (searchForm.supplierCode) filteredData = filteredData.filter(item => item.supplierCode.includes(searchForm.supplierCode))
       if (searchForm.supplierName) filteredData = filteredData.filter(item => item.supplierName.includes(searchForm.supplierName))
       if (searchForm.supplierLevel) filteredData = filteredData.filter(item => item.supplierLevel === searchForm.supplierLevel)

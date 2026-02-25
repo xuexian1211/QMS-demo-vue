@@ -28,6 +28,20 @@
             </a-menu>
           </template>
         </a-dropdown>
+        <a-dropdown>
+          <a-button>
+            <template #icon>
+              <ImportOutlined />
+            </template>导入
+            <DownOutlined />
+          </a-button>
+          <template #overlay>
+            <a-menu @click="handleImportMenu">
+              <a-menu-item key="template">下载导入模板</a-menu-item>
+              <a-menu-item key="upload">上传Excel文件</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
         <a-button @click="handleExport">
           <template #icon>
             <ExportOutlined />
@@ -41,8 +55,19 @@
       </a-space>
     </div>
 
+    <!-- 隐藏的文件上传 -->
+    <input ref="importFileRef" type="file" accept=".xlsx,.xls,.csv" style="display:none" @change="handleImportFile" />
+
     <a-card class="search-card" :bordered="false">
       <a-form layout="inline" :model="searchForm">
+        <a-form-item label="所属组织">
+          <a-select v-model:value="searchForm.orgId" style="width: 140px" placeholder="全部" allow-clear mode="multiple"
+            :max-tag-count="1">
+            <a-select-option value="Group">集团</a-select-option>
+            <a-select-option value="1">合肥工厂</a-select-option>
+            <a-select-option value="2">芜湖工厂</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item label="客户编码">
           <a-input v-model:value="searchForm.customerCode" placeholder="请输入" allow-clear />
         </a-form-item>
@@ -74,6 +99,11 @@
         :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }" :pagination="pagination"
         @change="handleTableChange">
         <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'orgId'">
+            <a-tag :color="getOrgColor(record.orgId)">
+              {{ getOrgName(record.orgId) }}
+            </a-tag>
+          </template>
           <template v-if="column.key === 'customerLevel'">
             <a-tag :color="getCustomerLevelColor(record.customerLevel)">
               {{ getCustomerLevelText(record.customerLevel) }}
@@ -105,12 +135,21 @@
       :footer="isView ? null : undefined">
       <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
         <a-row :gutter="16">
-          <a-col :span="12">
+          <a-col :span="8">
+            <a-form-item label="所属组织" name="orgId">
+              <a-select v-model:value="formData.orgId" placeholder="请选择所属组织" :disabled="isView">
+                <a-select-option value="Group">集团（全局）</a-select-option>
+                <a-select-option value="1">合肥工厂</a-select-option>
+                <a-select-option value="2">芜湖工厂</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
             <a-form-item label="客户编码" name="customerCode">
               <a-input v-model:value="formData.customerCode" placeholder="请输入客户编码" :disabled="isView" />
             </a-form-item>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="8">
             <a-form-item label="客户名称" name="customerName">
               <a-input v-model:value="formData.customerName" placeholder="请输入客户名称" :disabled="isView" />
             </a-form-item>
@@ -186,12 +225,29 @@
         <a-form-item label="备注" name="remark">
           <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="3" :disabled="isView" />
         </a-form-item>
+
+        <a-divider>附件管理</a-divider>
+        <a-form-item label="资质附件">
+          <a-upload v-model:file-list="formData.attachments" :disabled="isView" :before-upload="() => false"
+            list-type="text">
+            <a-button :disabled="isView">
+              <UploadOutlined /> 上传附件
+            </a-button>
+          </a-upload>
+          <div v-if="formData.attachments && formData.attachments.length"
+            style="margin-top: 8px; color: #8c8c8c; font-size: 12px;">
+            已上传 {{ formData.attachments.length }} 个附件
+          </div>
+        </a-form-item>
       </a-form>
     </a-modal>
 
     <!-- 查看详情模态框 -->
     <a-modal v-model:visible="viewModalVisible" title="客户详情" width="900px" :footer="null">
       <a-descriptions :column="3" bordered>
+        <a-descriptions-item label="所属组织">
+          <a-tag :color="getOrgColor(viewData.orgId)">{{ getOrgName(viewData.orgId) }}</a-tag>
+        </a-descriptions-item>
         <a-descriptions-item label="客户编码">{{ viewData.customerCode }}</a-descriptions-item>
         <a-descriptions-item label="客户名称">{{ viewData.customerName }}</a-descriptions-item>
         <a-descriptions-item label="客户等级">
@@ -229,6 +285,8 @@
     EditOutlined,
     DeleteOutlined,
     ExportOutlined,
+    ImportOutlined,
+    UploadOutlined,
     ReloadOutlined,
     DownOutlined
   } from '@ant-design/icons-vue'
@@ -242,9 +300,11 @@
   const isView = ref(false)
   const formRef = ref()
   const selectedRowKeys = ref([])
+  const importFileRef = ref()
 
   // 搜索表单
   const searchForm = reactive({
+    orgId: undefined,
     customerCode: '',
     customerName: '',
     customerLevel: undefined,
@@ -254,6 +314,7 @@
   // 表单数据
   const formData = reactive({
     id: '',
+    orgId: 'Group',
     customerCode: '',
     customerName: '',
     customerLevel: 'B',
@@ -266,11 +327,13 @@
     bankName: '',
     bankAccount: '',
     remark: '',
-    status: '1'
+    status: '1',
+    attachments: []
   })
 
   // 表格列定义
   const columns = [
+    { title: '所属组织', dataIndex: 'orgId', key: 'orgId', width: 100 },
     { title: '客户编码', dataIndex: 'customerCode', key: 'customerCode', width: 120 },
     { title: '客户名称', dataIndex: 'customerName', key: 'customerName', width: 180 },
     { title: '客户等级', dataIndex: 'customerLevel', key: 'customerLevel', width: 100 },
@@ -283,9 +346,9 @@
 
   // 表格数据
   const dataSource = ref([
-    { id: '1', customerCode: 'CUST001', customerName: '华为技术有限公司', customerLevel: 'A', creditLevel: 5, creditCode: '91440300708461136T', legalPerson: '任正非', phone: '0755-28780808', email: 'contact@huawei.com', address: '广东省深圳市龙岗区坂田华为基地', bankName: '中国工商银行深圳分行', bankAccount: '622202400001234567', remark: '重要战略客户', status: '1', createTime: '2024-01-15 10:30:00', updateTime: '2024-01-15 10:30:00' },
-    { id: '2', customerCode: 'CUST002', customerName: '腾讯科技有限公司', customerLevel: 'A', creditLevel: 4.5, creditCode: '91440300708461136T', legalPerson: '马化腾', phone: '0755-86013388', email: 'contact@tencent.com', address: '广东省深圳市南山区科技园', bankName: '中国建设银行深圳分行', bankAccount: '622700720001234567', remark: '长期合作客户', status: '1', createTime: '2024-01-15 10:35:00', updateTime: '2024-01-15 10:35:00' },
-    { id: '3', customerCode: 'CUST003', customerName: '阿里巴巴集团', customerLevel: 'A', creditLevel: 4.5, creditCode: '91330100MA2802X12X', legalPerson: '张勇', phone: '0571-85022088', email: 'contact@alibaba.com', address: '浙江省杭州市余杭区文一西路969号', bankName: '中国工商银行杭州分行', bankAccount: '622202120001234567', remark: '电商领域重要客户', status: '1', createTime: '2024-01-15 10:40:00', updateTime: '2024-01-15 10:40:00' }
+    { id: '1', orgId: 'Group', customerCode: 'CUST001', customerName: '华为技术有限公司', customerLevel: 'A', creditLevel: 5, creditCode: '91440300708461136T', legalPerson: '任正非', phone: '0755-28780808', email: 'contact@huawei.com', address: '广东省深圳市龙岗区坂田华为基地', bankName: '中国工商银行深圳分行', bankAccount: '622202400001234567', remark: '重要战略客户', status: '1', createTime: '2024-01-15 10:30:00', updateTime: '2024-01-15 10:30:00', attachments: [] },
+    { id: '2', orgId: '1', customerCode: 'CUST002', customerName: '腾讯科技有限公司', customerLevel: 'A', creditLevel: 4.5, creditCode: '91440300708461136T', legalPerson: '马化腾', phone: '0755-86013388', email: 'contact@tencent.com', address: '广东省深圳市南山区科技园', bankName: '中国建设银行深圳分行', bankAccount: '622700720001234567', remark: '长期合作客户', status: '1', createTime: '2024-01-15 10:35:00', updateTime: '2024-01-15 10:35:00', attachments: [] },
+    { id: '3', orgId: '2', customerCode: 'CUST003', customerName: '阿里巴巴集团', customerLevel: 'A', creditLevel: 4.5, creditCode: '91330100MA2802X12X', legalPerson: '张勇', phone: '0571-85022088', email: 'contact@alibaba.com', address: '浙江省杭州市余杭区文一西路969号', bankName: '中国工商银行杭州分行', bankAccount: '622202120001234567', remark: '电商领域重要客户', status: '1', createTime: '2024-01-15 10:40:00', updateTime: '2024-01-15 10:40:00', attachments: [] }
   ])
 
   // 分页配置
@@ -306,6 +369,17 @@
     customerName: [{ required: true, message: '请输入客户名称', trigger: 'blur' }],
     customerLevel: [{ required: true, message: '请选择客户等级', trigger: 'change' }],
     phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }]
+  }
+
+  // 多组织工具方法
+  const getOrgName = (orgId) => {
+    const map = { 'Group': '集团', '1': '合肥工厂', '2': '芜湖工厂' }
+    return map[orgId] || '未知'
+  }
+
+  const getOrgColor = (orgId) => {
+    const map = { 'Group': 'purple', '1': 'blue', '2': 'cyan' }
+    return map[orgId] || 'default'
   }
 
   // 工具方法
@@ -337,7 +411,7 @@
   }
 
   const resetSearch = () => {
-    Object.assign(searchForm, { customerCode: '', customerName: '', customerLevel: undefined, status: undefined })
+    Object.assign(searchForm, { orgId: undefined, customerCode: '', customerName: '', customerLevel: undefined, status: undefined })
     handleSearch()
   }
 
@@ -435,9 +509,9 @@
 
   const resetForm = () => {
     Object.assign(formData, {
-      id: '', customerCode: '', customerName: '', customerLevel: 'B', creditLevel: 3,
+      id: '', orgId: 'Group', customerCode: '', customerName: '', customerLevel: 'B', creditLevel: 3,
       creditCode: '', legalPerson: '', phone: '', email: '', address: '',
-      bankName: '', bankAccount: '', remark: '', status: '1'
+      bankName: '', bankAccount: '', remark: '', status: '1', attachments: []
     })
     formRef.value?.resetFields()
   }
@@ -479,10 +553,34 @@
     })
   }
 
+  // 导入功能
+  const handleImportMenu = ({ key }) => {
+    if (key === 'template') {
+      message.success('导入模板下载功能（客户编码、客户名称、等级、联系电话等列）')
+    } else if (key === 'upload') {
+      importFileRef.value?.click()
+    }
+  }
+
+  const handleImportFile = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    message.info(`正在解析文件: ${file.name}`)
+    // NOTE: 实际项目中应使用 xlsx 等库进行解析
+    setTimeout(() => {
+      message.success('导入完成（前端模拟），共处理 0 条数据')
+    }, 1000)
+    e.target.value = ''
+  }
+
   const fetchData = () => {
     loading.value = true
     setTimeout(() => {
       let filteredData = [...dataSource.value]
+      // 多组织过滤
+      if (searchForm.orgId && searchForm.orgId.length > 0) {
+        filteredData = filteredData.filter(item => searchForm.orgId.includes(item.orgId))
+      }
       if (searchForm.customerCode) filteredData = filteredData.filter(item => item.customerCode.includes(searchForm.customerCode))
       if (searchForm.customerName) filteredData = filteredData.filter(item => item.customerName.includes(searchForm.customerName))
       if (searchForm.customerLevel) filteredData = filteredData.filter(item => item.customerLevel === searchForm.customerLevel)

@@ -11,17 +11,29 @@
           <h2 class="page-title">{{ pageTitle }}</h2>
           <a-tag v-if="form.version" color="blue">{{ form.version }}</a-tag>
           <a-tag :color="statusColor(form.status)">{{ statusText(form.status) }}</a-tag>
+          <!-- 组织归属标识 -->
+          <a-tag v-if="form.orgId === null" color="gold">集团方案</a-tag>
+          <a-tag v-else color="cyan">本地方案</a-tag>
           <a-tag v-if="form.sourceTemplateName" color="purple">
             <template #icon><CopyOutlined /></template>
             源自: {{ form.sourceTemplateName }}
           </a-tag>
         </div>
       </div>
-      <a-space v-if="!isView">
+      <a-space v-if="!isView && !isReadOnly">
         <a-button @click="handleSave" :loading="saving">保存草稿</a-button>
         <a-button type="primary" @click="handleSave" :loading="saving">保存</a-button>
       </a-space>
     </div>
+
+    <!-- 集团方案只读提示 -->
+    <a-alert
+      v-if="isReadOnly"
+      type="warning"
+      show-icon
+      message="集团级方案对工厂用户只读，如需修改请联系集团管理员，或基于此方案创建一个新的本地方案。"
+      style="margin-bottom:16px"
+    />
 
     <!-- 基本信息卡片 -->
     <a-card class="info-card" title="基本信息">
@@ -30,24 +42,24 @@
         <a-row :gutter="24">
           <a-col :span="8">
             <a-form-item label="方案编码" name="schemeCode">
-              <a-input v-model:value="form.schemeCode" :disabled="isView || isEdit" placeholder="如: SCH-IQC-001" />
+              <a-input v-model:value="form.schemeCode" :disabled="isView || isEdit || isReadOnly" placeholder="如: SCH-IQC-001" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
             <a-form-item label="方案名称" name="schemeName">
-              <a-input v-model:value="form.schemeName" :disabled="isView" placeholder="请输入方案名称" />
+              <a-input v-model:value="form.schemeName" :disabled="isView || isReadOnly" placeholder="请输入方案名称" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
             <a-form-item label="版本" name="version">
-              <a-input v-model:value="form.version" :disabled="isView" placeholder="如: V1.0" />
+              <a-input v-model:value="form.version" :disabled="isView || isReadOnly" placeholder="如: V1.0" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="24">
           <a-col :span="8">
             <a-form-item label="检验类型" name="inspType">
-              <a-select v-model:value="form.inspType" :disabled="isView" placeholder="请选择">
+              <a-select v-model:value="form.inspType" :disabled="isView || isReadOnly" placeholder="请选择">
                 <a-select-option value="IQC">IQC 来料检验</a-select-option>
                 <a-select-option value="IPQC">IPQC 过程检验</a-select-option>
                 <a-select-option value="FQC">FQC 成品检验</a-select-option>
@@ -59,7 +71,7 @@
             <a-form-item label="引用模板">
               <a-select
                 v-model:value="selectedTemplateId"
-                :disabled="isView || details.length > 0"
+                :disabled="isView || isReadOnly || details.length > 0"
                 placeholder="选择模板可自动带出检验项目"
                 allow-clear
                 @change="handleTemplateChange"
@@ -82,7 +94,7 @@
         <a-row :gutter="24">
           <a-col :span="16">
             <a-form-item label="描述" :label-col="{ span: 3 }" :wrapper-col="{ span: 20 }">
-              <a-textarea v-model:value="form.description" :disabled="isView" :rows="2" />
+              <a-textarea v-model:value="form.description" :disabled="isView || isReadOnly" :rows="2" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -102,7 +114,7 @@
             </span>
           </template>
 
-          <div class="tab-toolbar" v-if="!isView">
+          <div class="tab-toolbar" v-if="!isView && !isReadOnly">
             <a-space>
               <a-button type="primary" size="small" @click="handleAddDetail">
                 <template #icon><PlusOutlined /></template>新增检验项目
@@ -191,17 +203,17 @@
 
               <!-- SPC 开关 -->
               <template v-if="column.key === 'spcEnabled'">
-                <a-switch v-model:checked="record.spcEnabled" :disabled="isView" size="small" />
+                <a-switch v-model:checked="record.spcEnabled" :disabled="isView || isReadOnly" size="small" />
               </template>
 
               <!-- 实验室 -->
               <template v-if="column.key === 'labRequired'">
-                <a-switch v-model:checked="record.labRequired" :disabled="isView" size="small" />
+                <a-switch v-model:checked="record.labRequired" :disabled="isView || isReadOnly" size="small" />
               </template>
 
               <!-- 操作 -->
               <template v-if="column.key === 'action'">
-                <a-space v-if="!isView">
+                <a-space v-if="!isView && !isReadOnly">
                   <template v-if="record._editing">
                     <a-button type="link" size="small" @click="record._editing = false">完成</a-button>
                   </template>
@@ -224,7 +236,7 @@
             </span>
           </template>
 
-          <div class="tab-toolbar" v-if="!isView">
+          <div class="tab-toolbar" v-if="!isView && !isReadOnly">
             <a-space>
               <a-button type="primary" size="small" @click="handleAddStrategy">
                 <template #icon><PlusOutlined /></template>新增策略
@@ -278,7 +290,7 @@
                 </a-tag>
               </template>
               <template v-if="column.key === 'action'">
-                <a-space v-if="!isView">
+                <a-space v-if="!isView && !isReadOnly">
                   <a-button type="link" size="small" @click="openStrategyEdit(record)">编辑</a-button>
                   <a-button type="link" danger size="small" @click="handleRemoveStrategy(record)">删除</a-button>
                 </a-space>
@@ -292,7 +304,7 @@
           <template #tab>
             <span>物料规格 <a-badge :count="materialSpecs.length" :offset="[6,-2]" color="#722ed1" /></span>
           </template>
-          <div class="tab-toolbar" v-if="!isView">
+          <div class="tab-toolbar" v-if="!isView && !isReadOnly">
             <a-button type="primary" size="small" @click="handleAddSpec">
               <template #icon><PlusOutlined /></template>新增规格
             </a-button>
@@ -312,7 +324,7 @@
                 <span v-else>{{ record.standardDesc || record.expectedValue }}</span>
               </template>
               <template v-if="column.key === 'action'">
-                <a-space v-if="!isView">
+                <a-space v-if="!isView && !isReadOnly">
                   <a-button type="link" size="small" @click="openSpecEdit(record)">编辑</a-button>
                   <a-button type="link" danger size="small" @click="handleRemoveSpec(record)">删除</a-button>
                 </a-space>
@@ -323,7 +335,7 @@
 
         <!-- ④ 不良现象绑定 -->
         <a-tab-pane key="phenomenon" tab="不良现象防错配置">
-          <div class="tab-toolbar" v-if="!isView">
+          <div class="tab-toolbar" v-if="!isView && !isReadOnly">
             <a-button type="primary" size="small" @click="handleAddPhenomenon">
               <template #icon><PlusOutlined /></template>新增绑定
             </a-button>
@@ -334,7 +346,7 @@
                 <a-tag :color="severityColor(record.severity)">{{ record.severity }}</a-tag>
               </template>
               <template v-if="column.key === 'action'">
-                <a-button type="link" danger size="small" @click="handleRemovePhenomenon(record)" v-if="!isView">删除</a-button>
+                <a-button type="link" danger size="small" @click="handleRemovePhenomenon(record)" v-if="!isView && !isReadOnly">删除</a-button>
               </template>
             </template>
           </a-table>
@@ -560,9 +572,24 @@ const isView = computed(() => route.path.includes('/view/'))
 const isEdit = computed(() => route.path.includes('/edit/'))
 const pageTitle = computed(() => isView.value ? '查看检验方案' : isEdit.value ? '编辑检验方案' : '新增检验方案')
 
+// NOTE: 实际项目中应从全局 store（Pinia）获取，null 表示集团用户，有值则为具体工厂ID
+const currentOrgId = ref<string | null>('ORG001')
+
+/**
+ * 集团级方案（orgId === null）对工厂级用户只读
+ * 工厂级用户（currentOrgId !== null）只能编辑本组织的方案
+ */
+const isReadOnly = computed(() => {
+  if (!isEdit.value && !isView.value) return false
+  if (currentOrgId.value === null) return false
+  return form.orgId === null
+})
+
 // ─── 基本表单 ─────────────────────────────
 const form = reactive({
   id: null as string | null,
+  /** 组织ID：null 表示集团级方案，有值表示工厂级私有方案 */
+  orgId: null as string | null,
   schemeCode: '',
   schemeName: '',
   version: 'V1.0',
@@ -730,7 +757,9 @@ function handleAddStrategy() {
     triggerCondition: 'ALWAYS',
     triggerValue: undefined,
     description: '',
-    createTime: '', updateTime: '', creator: '', updater: '', orgId: 'ORG001'
+    createTime: '', updateTime: '', creator: '', updater: '',
+    // NOTE: 策略归属于当前方案所在组织
+    orgId: form.orgId ?? currentOrgId.value ?? ''
   }
   showStrategyModal.value = true
 }
@@ -817,7 +846,9 @@ function handleAddSpec() {
     targetValue: undefined, upperLimit: undefined, lowerLimit: undefined, uom: 'mm',
     standardDesc: '', expectedValue: '', specCode: '', specName: '',
     specType: 'quantitative', sortOrder: materialSpecs.value.length + 1, status: 'enabled',
-    orgId: 'ORG001', createTime: '', updateTime: '', creator: '', updater: ''
+    // NOTE: 规格归属于当前方案所在组织
+    orgId: form.orgId ?? currentOrgId.value ?? '',
+    createTime: '', updateTime: '', creator: '', updater: ''
   }
   showSpecModal.value = true
 }
@@ -924,35 +955,48 @@ const handleSave = async () => {
 onMounted(() => {
   const id = route.params.id as string | undefined
   if (id) {
-    // 模拟加载已有数据
+    /**
+     * HACK: Mock 数据区分两种场景：
+     * - id='1' 或无特殊处理 → 加载「集团级方案」(orgId=null)，用于演示工厂用户的只读效果
+     * - id='2' → 加载「本地方案」(orgId = currentOrgId)，工厂用户可编辑
+     * 实际应从 API 获取并根据返回 orgId 决定
+     */
+    const isGroupScheme = id !== '2'
     Object.assign(form, {
       id,
-      schemeCode: 'SCH-IQC-001',
-      schemeName: '合肥工厂-电子料IQC专用方案',
+      orgId: isGroupScheme ? null : currentOrgId.value,
+      schemeCode: isGroupScheme ? 'SCH-IQC-G001' : 'SCH-IQC-001',
+      schemeName: isGroupScheme ? '集团通用-电子料IQC方案' : '合肥工厂-电子料IQC专用方案',
       version: 'V1.0',
       inspType: 'IQC',
       status: 'APPROVED',
       sourceTemplateId: 'T001',
       sourceTemplateName: 'IQC-原材料通用模板',
-      description: '用于IC芯片类物料的来料检验，额外增加了引脚平整度检查。'
+      description: isGroupScheme
+        ? '集团统一制定，适用于所有工厂的电子类物料来料检验。'
+        : '用于IC芯片类物料的来料检验，额外增加了引脚平整度检查。'
     })
     selectedTemplateId.value = 'T001'
+    const schemeOrgId = isGroupScheme ? null : currentOrgId.value
     details.value = [
       { id: 'd1', schemeId: id, sortOrder: 1, inspItemId: 'ITEM001', inspItemName: '外观检查', characteristicClass: 'Major', samplingRuleCode: 'AQL-L2-N-0.65', samplingRuleName: 'AQL 0.65 Level-II', spcEnabled: false, labRequired: false, fromTemplate: true, _editing: false, createTime:'', updateTime:'', creator:'', updater:'' },
       { id: 'd2', schemeId: id, sortOrder: 2, inspItemId: 'ITEM002', inspItemName: '尺寸测量',  characteristicClass: 'CC',    samplingRuleCode: 'AQL-L2-N-1.0',  samplingRuleName: 'AQL 1.0 Level-II', spcEnabled: true, labRequired: false, fromTemplate: true, _editing: false, createTime:'', updateTime:'', creator:'', updater:'' },
       { id: 'd3', schemeId: id, sortOrder: 3, inspItemId: 'ITEM006', inspItemName: '引脚平整度', characteristicClass: 'SC',   samplingRuleCode: 'FULL_INSPECT',   samplingRuleName: '全检',             spcEnabled: false, labRequired: false, fromTemplate: false, _editing: false, createTime:'', updateTime:'', creator:'', updater:'' },
     ]
     strategies.value = [
-      { id: 's1', schemeId: id, contextType: 'IQC', matchDimension: { materialId: 'MAT002', materialName: '电子元器件A' }, priority: 20, triggerCondition: 'ALWAYS', orgId: 'ORG001', createTime:'', updateTime:'', creator:'', updater:'' },
-      { id: 's2', schemeId: id, contextType: 'IQC', matchDimension: { materialId: 'MAT002', materialName: '电子元器件A', supplierId: 'SUP003', supplierName: '供应商丙（新供应商）' }, priority: 5, triggerCondition: 'ON_NEW_SUPPLIER_FIRST_N_BATCHES', triggerValue: 3, orgId: 'ORG001', createTime:'', updateTime:'', creator:'', updater:'' },
+      { id: 's1', schemeId: id, contextType: 'IQC', matchDimension: { materialId: 'MAT002', materialName: '电子元器件A' }, priority: 20, triggerCondition: 'ALWAYS', orgId: schemeOrgId, createTime:'', updateTime:'', creator:'', updater:'' },
+      { id: 's2', schemeId: id, contextType: 'IQC', matchDimension: { materialId: 'MAT002', materialName: '电子元器件A', supplierId: 'SUP003', supplierName: '供应商丙（新供应商）' }, priority: 5, triggerCondition: 'ON_NEW_SUPPLIER_FIRST_N_BATCHES', triggerValue: 3, orgId: schemeOrgId, createTime:'', updateTime:'', creator:'', updater:'' },
     ]
     materialSpecs.value = [
-      { id: 'sp1', materialId: 'MAT002', materialCode: 'M002', inspItemCode: 'ITEM006', inspItemName: '引脚平整度', dataType: 'QUANTITATIVE', targetValue: 0.05, upperLimit: 0.1, lowerLimit: 0, uom: 'mm', specCode: 'SP001', specName: '引脚平整度规格', specType: 'quantitative', sortOrder: 1, status: 'enabled', orgId: 'ORG001', createTime:'', updateTime:'', creator:'', updater:'' }
+      { id: 'sp1', materialId: 'MAT002', materialCode: 'M002', inspItemCode: 'ITEM006', inspItemName: '引脚平整度', dataType: 'QUANTITATIVE', targetValue: 0.05, upperLimit: 0.1, lowerLimit: 0, uom: 'mm', specCode: 'SP001', specName: '引脚平整度规格', specType: 'quantitative', sortOrder: 1, status: 'enabled', orgId: schemeOrgId, createTime:'', updateTime:'', creator:'', updater:'' }
     ]
     phenomenonMaps.value = [
       { id: 'p1', itemName: '外观检查', phenomenonName: '表面划伤', severity: 'MI' },
       { id: 'p2', itemName: '外观检查', phenomenonName: '引脚变形', severity: 'MA' },
     ]
+  } else {
+    // 新增模式：orgId 默认为当前用户所在组织
+    form.orgId = currentOrgId.value
   }
 })
 </script>
