@@ -1,0 +1,32 @@
+﻿npx : Change 'add-customer-supplier-
+mapping' has issues
+所在位置 行:1 字符: 1
++ npx openspec validate add-customer
+-supplier-mapping --strict 2>&1 | O 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSp 
+   ecified: (Change 'add-cus...ing  
+  ' has issues:String) [], Remote   
+ Exception
+    + FullyQualifiedErrorId : Nativ 
+   eCommandError
+ 
+鉁?[ERROR] customer-supplier-mapping/
+spec.md: ADDED "瀹緵鍏崇郴鏄犲皠鍒楄〃涓庢煡璇? mu
+st contain SHALL or MUST
+鉁?[ERROR] customer-supplier-mapping/
+spec.md: ADDED "鏂板涓庣紪杈戝渚涙槧灏勫叧绯? mu
+st contain SHALL or MUST
+鉁?[ERROR] customer-supplier-mapping/
+spec.md: ADDED "鏄犲皠鍏崇郴鐨勫惎鐢ㄤ笌绂佺敤" mus
+t contain SHALL or MUST
+Next steps:
+  - Ensure change has deltas in spec
+s/: use headers ## ADDED/MODIFIED/RE
+MOVED/RENAMED Requirements
+  - Each requirement MUST include at
+ least one #### Scenario: block
+  - Debug parsed deltas: openspec ch
+ange show <id> --json --deltas-only

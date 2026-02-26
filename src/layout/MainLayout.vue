@@ -21,20 +21,22 @@
             <a-sub-menu key="basic-data">
               <template #title>📋 基础数据</template>
               <a-menu-item key="/basic-data/customer-archive"
-                @click="navigateTo('/basic-data/customer-archive')">客户档案管理</a-menu-item>
+                @click="navigateTo('/basic-data/customer-archive')">客户档案</a-menu-item>
               <a-menu-item key="/basic-data/supplier-archive"
-                @click="navigateTo('/basic-data/supplier-archive')">供应商档案管理</a-menu-item>
+                @click="navigateTo('/basic-data/supplier-archive')">供应商档案</a-menu-item>
               <a-menu-item key="guest-supplier" @click="showDeveloping('客供关系映射')">客供关系映射</a-menu-item>
               <a-menu-item key="/basic-data/material-category"
-                @click="navigateTo('/basic-data/material-category')">物料分类管理</a-menu-item>
-              <a-menu-item key="/basic-data/material" @click="navigateTo('/basic-data/material')">物料/产品主数据</a-menu-item>
+                @click="navigateTo('/basic-data/material-category')">物料分类</a-menu-item>
+              <a-menu-item key="/basic-data/material" @click="navigateTo('/basic-data/material')">物料档案</a-menu-item>
               <a-menu-item key="/basic-data/process-route"
-                @click="navigateTo('/basic-data/process-route')">工艺路线管理</a-menu-item>
+                @click="navigateTo('/basic-data/process-route')">工艺路线</a-menu-item>
               <a-menu-item key="/basic-data/production-team"
-                @click="navigateTo('/basic-data/production-team')">生产班组信息</a-menu-item>
+                @click="navigateTo('/basic-data/production-team')">生产班组</a-menu-item>
               <a-menu-item key="/basic-data/storage-location"
-                @click="navigateTo('/basic-data/storage-location')">库位划分</a-menu-item>
-              <a-menu-item key="/basic-data/unit" @click="navigateTo('/basic-data/unit')">单位体系管理</a-menu-item>
+                @click="navigateTo('/basic-data/storage-location')">地点存储</a-menu-item>
+              <a-menu-item key="/basic-data/unit" @click="navigateTo('/basic-data/unit')">计量单位</a-menu-item>
+              <a-menu-item key="csr" @click="showDeveloping('顾客特殊要求(CSR)')">顾客特殊要求(CSR)</a-menu-item>
+              <a-menu-item key="tooling-die" @click="showDeveloping('模具与工装档案')">模具与工装档案</a-menu-item>
             </a-sub-menu>
 
             <!-- 3. 质量主数据 -->
@@ -45,125 +47,161 @@
               <a-menu-item key="/inspection-model/defect-causes"
                 @click="navigateTo('/inspection-model/defect-causes')">缺陷原因库</a-menu-item>
               <a-menu-item key="/inspection-model/inspection-items"
-                @click="navigateTo('/inspection-model/inspection-items')">检验项目管理</a-menu-item>
+                @click="navigateTo('/inspection-model/inspection-items')">检验项目</a-menu-item>
               <a-menu-item key="/inspection-model/insp-methods"
-                @click="navigateTo('/inspection-model/insp-methods')">检验方法管理</a-menu-item>
+                @click="navigateTo('/inspection-model/insp-methods')">检验方法</a-menu-item>
               <a-menu-item key="/inspection-model/sampling-plans"
-                @click="navigateTo('/inspection-model/sampling-plans')">抽样方案配置</a-menu-item>
+                @click="navigateTo('/inspection-model/sampling-plans')">抽样方案</a-menu-item>
               <a-menu-item key="/inspection-model/insp-templates"
-                @click="navigateTo('/inspection-model/insp-templates')">检验模板设计</a-menu-item>
+                @click="navigateTo('/inspection-model/insp-templates')">检验模板</a-menu-item>
               <a-menu-item key="/inspection-model/insp-plans"
-                @click="navigateTo('/inspection-model/insp-plans')">检验方案设计</a-menu-item>
+                @click="navigateTo('/inspection-model/insp-plans')">检验方案</a-menu-item>
               <a-menu-item key="insp-plans-model" @click="showDeveloping('检验计划模型')">检验计划模型</a-menu-item>
               <a-menu-item key="/inspection-model/gauge-ledgers"
                 @click="navigateTo('/inspection-model/gauge-ledgers')">计量器具台账</a-menu-item>
+              <a-menu-item key="barcode-label" @click="showDeveloping('追溯条码与标签模板')">追溯条码与标签模板</a-menu-item>
             </a-sub-menu>
 
-            <!-- 4. 质量先期策划 (APQP / PPAP) -->
+            <!-- 4. 质量策划 (Plan) -->
             <a-sub-menu key="apqp-ppap">
               <template #title>📝 质量策划</template>
-              <a-menu-item key="apqp" @click="showDeveloping('APQP项目管理')">APQP 项目管理看板</a-menu-item>
-              <a-menu-item key="/tools/fmea" @click="navigateTo('/tools/fmea')">FMEA 管理</a-menu-item>
-              <a-menu-item key="control-plan" @click="showDeveloping('控制计划管理')">控制计划 (Control Plan)</a-menu-item>
-              <a-menu-item key="ppap" @click="showDeveloping('PPAP审批管理')">PPAP 提交与审批过程管理</a-menu-item>
+              <a-menu-item key="apqp" @click="showDeveloping('APQP项目管理')">APQP项目管理</a-menu-item>
+              <a-menu-item key="/tools/fmea" @click="navigateTo('/tools/fmea')">FMEA管理</a-menu-item>
+              <a-menu-item key="control-plan" @click="showDeveloping('控制计划管理')">控制计划</a-menu-item>
+              <a-menu-item key="ppap" @click="showDeveloping('PPAP审批管理')">PPAP管理</a-menu-item>
             </a-sub-menu>
 
-            <!-- 5. 供应商质量管理 (SQM) -->
-            <a-sub-menu key="sqm">
-              <template #title>🏭 供方质量</template>
-              <a-menu-item key="/supplier" @click="navigateTo('/supplier')">供应商准入与评估</a-menu-item>
-              <a-menu-item key="supplier-ppap" @click="showDeveloping('供应商PPAP管理')">供应商 PPAP 管理</a-menu-item>
-              <a-menu-item key="/production-quality/quality-inspection/iqc-checklist"
-                @click="navigateTo('/production-quality/quality-inspection/iqc-checklist')">IQC 来料检验任务</a-menu-item>
-              <a-menu-item key="/production-quality/exception-handling/material-disposal"
-                @click="navigateTo('/production-quality/exception-handling/material-disposal')">进料不良异常处理</a-menu-item>
-              <a-menu-item key="supplier-kpi" @click="showDeveloping('供应商绩效考核')">供应商考核与审核</a-menu-item>
+            <!-- 5. 质量执行与控制 (Do) -->
+            <a-sub-menu key="quality-do">
+              <template #title>⚙️ 执行与控制</template>
+              <!-- 5.1 供应商质量管理 -->
+              <a-sub-menu key="sqm">
+                <template #title>🏭 供应商质量(SQM)</template>
+                <a-menu-item key="/supplier" @click="navigateTo('/supplier')">供应商准入与评估</a-menu-item>
+                <a-menu-item key="supplier-ppap" @click="showDeveloping('供应商PPAP管理')">供应商PPAP管理</a-menu-item>
+                <a-menu-item key="/production-quality/quality-inspection/iqc-checklist"
+                  @click="navigateTo('/production-quality/quality-inspection/iqc-checklist')">IQC来料检验</a-menu-item>
+                <a-menu-item key="/production-quality/exception-handling/material-disposal"
+                  @click="navigateTo('/production-quality/exception-handling/material-disposal')">进料不良异常处理</a-menu-item>
+                <a-menu-item key="supplier-kpi" @click="showDeveloping('供应商绩效考核')">供应商绩效考核</a-menu-item>
+                <a-menu-item key="supplier-chargeback" @click="showDeveloping('供应商索赔与违约考核')">供应商索赔与违约考核</a-menu-item>
+              </a-sub-menu>
+              <!-- 5.2 生产过程控制 -->
+              <a-sub-menu key="process-quality">
+                <template #title>🏭 生产过程控制(IPQC)</template>
+                <a-menu-item key="/production-quality/quality-inspection/ipqc-checklist"
+                  @click="navigateTo('/production-quality/quality-inspection/ipqc-checklist')">首件/巡检/末件检验任务</a-menu-item>
+                <a-menu-item key="die-casting" @click="showDeveloping('压铸工艺参数实时监控')">压铸工艺参数监控</a-menu-item>
+                <a-menu-item key="casting-inspection" @click="showDeveloping('铸件检验与质量档案')">铸件检验与质量档案</a-menu-item>
+                <a-menu-item key="containment" @click="showDeveloping('围堵单管理')">围堵单管理</a-menu-item>
+                <a-menu-item key="poka-yoke" @click="showDeveloping('防错装置验证点检')">防错验证点检</a-menu-item>
+              </a-sub-menu>
+              <!-- 5.3 最终检验与出货 -->
+              <a-sub-menu key="fqc-oqc">
+                <template #title>📦 终检出货(FQC/OQC)</template>
+                <a-menu-item key="/production-quality/quality-inspection/fqc-checklist"
+                  @click="navigateTo('/production-quality/quality-inspection/fqc-checklist')">FQC终检任务</a-menu-item>
+                <a-menu-item key="/production-quality/quality-inspection/oqc-checklist"
+                  @click="navigateTo('/production-quality/quality-inspection/oqc-checklist')">OQC出货检验</a-menu-item>
+                <a-menu-item key="/production-quality/exception-handling/product-disposal"
+                  @click="navigateTo('/production-quality/exception-handling/product-disposal')">不合格品报废申请与审理</a-menu-item>
+                <a-menu-item key="concession" @click="showDeveloping('让步接收(特采)单')">让步接收(特采)单</a-menu-item>
+                <a-menu-item key="rework-repair" @click="showDeveloping('返工/返修单管理')">返工/返修单管理</a-menu-item>
+              </a-sub-menu>
+              <!-- 5.4 实验室管理 -->
+              <a-sub-menu key="lab">
+                <template #title>🔬 实验室管理(Lab)</template>
+                <a-menu-item key="lab-apply" @click="showDeveloping('实验室送检任务申请')">实验室送检任务</a-menu-item>
+                <a-menu-item key="lab-report" @click="showDeveloping('实验室检测执行与报告')">实验室检测执行</a-menu-item>
+                <a-menu-item key="lab-device" @click="showDeveloping('检测仪器设备监控')">检测仪器设备监控</a-menu-item>
+              </a-sub-menu>
             </a-sub-menu>
 
-            <!-- 6. 生产过程质量管控 -->
-            <a-sub-menu key="process-quality">
-              <template #title>⚙️ 过程质量</template>
-              <a-menu-item key="/production-quality/quality-inspection/ipqc-checklist"
-                @click="navigateTo('/production-quality/quality-inspection/ipqc-checklist')">首件/巡检任务管理(IPQC)</a-menu-item>
-              <a-menu-item key="/tools/spc" @click="navigateTo('/tools/spc')">SPC 控制图分析</a-menu-item>
-              <a-menu-item key="die-casting" @click="showDeveloping('压铸工艺参数监控')">压铸工艺参数实时监控</a-menu-item>
-              <a-menu-item key="casting-inspection" @click="showDeveloping('铸件检验与质量档案')">铸件检验与质量档案</a-menu-item>
-              <a-menu-item key="containment" @click="showDeveloping('围堵单管理')">围堵单管理(产线围堵)</a-menu-item>
+            <!-- 6. 质量检查与评价 (Check) -->
+            <a-sub-menu key="quality-check">
+              <template #title>📊 检查与评价</template>
               <a-menu-item key="/production-quality/exception-handling/qrqc-response"
-                @click="navigateTo('/production-quality/exception-handling/qrqc-response')">QRQC 快速反应看板</a-menu-item>
-              <a-menu-item key="/production-quality/exception-handling/process-disposal"
-                @click="navigateTo('/production-quality/exception-handling/process-disposal')">过程不合格品处置单</a-menu-item>
-              <a-menu-item key="/production-quality/quality-inspection/inspection-rules"
-                @click="navigateTo('/production-quality/quality-inspection/inspection-rules')">检验规则配置</a-menu-item>
-              <a-menu-item key="/production-quality/problem-management/problem-types"
-                @click="navigateTo('/production-quality/problem-management/problem-types')">生产问题类型</a-menu-item>
-              <a-menu-item key="/production-quality/problem-management/problem-list"
-                @click="navigateTo('/production-quality/problem-management/problem-list')">生产问题管理</a-menu-item>
+                @click="navigateTo('/production-quality/exception-handling/qrqc-response')">QRQC快速反应</a-menu-item>
+              <a-menu-item key="/tools/spc" @click="navigateTo('/tools/spc')">SPC控制与分析</a-menu-item>
+              <a-menu-item key="msa" @click="showDeveloping('MSA测量系统分析')">MSA测量系统分析</a-menu-item>
+              <a-menu-item key="customer-satisfaction" @click="showDeveloping('客户满意度调查与评价')">客户满意度调查</a-menu-item>
+              <a-menu-item key="lpa" @click="showDeveloping('LPA分层过程审核计划与执行')">分层过程审核</a-menu-item>
+              <a-menu-item key="audit" @click="showDeveloping('内部/外部体系审核跟踪')">体系审核跟踪</a-menu-item>
+              <a-menu-item key="review" @click="showDeveloping('管理评审执行记录')">管理评审执行记录</a-menu-item>
             </a-sub-menu>
 
-            <!-- 7. 终检与出货质量 -->
-            <a-sub-menu key="fqc-oqc">
-              <template #title>📦 终检出货</template>
-              <a-menu-item key="/production-quality/quality-inspection/fqc-checklist"
-                @click="navigateTo('/production-quality/quality-inspection/fqc-checklist')">FQC 终检任务台账</a-menu-item>
-              <a-menu-item key="/production-quality/quality-inspection/oqc-checklist"
-                @click="navigateTo('/production-quality/quality-inspection/oqc-checklist')">OQC 出货检验记录</a-menu-item>
-              <a-menu-item key="/production-quality/exception-handling/product-disposal"
-                @click="navigateTo('/production-quality/exception-handling/product-disposal')">不合格品报废申请与审理</a-menu-item>
-            </a-sub-menu>
-
-            <!-- 8. 客户质量与服务 -->
-            <a-sub-menu key="customer-improve">
-              <template #title>👥 客诉处理</template>
+            <!-- 7. 质量改进与行动 (Act) -->
+            <a-sub-menu key="quality-act">
+              <template #title>🔄 改进与行动</template>
               <a-menu-item key="/customer" @click="navigateTo('/customer')">客诉/客退登记与处理</a-menu-item>
-              <a-menu-item key="8d" @click="showDeveloping('AIAG 8D报告管理')">AIAG 8D 报告管理与追踪</a-menu-item>
-              <a-menu-item key="customer-satisfaction" @click="showDeveloping('客户满意度调查')">客户满意度调查与评价</a-menu-item>
-            </a-sub-menu>
-
-            <!-- 9. 持续改进与体系审核 -->
-            <a-sub-menu key="improvement-audit">
-              <template #title>🔄 体系改进</template>
+              <a-menu-item key="8d" @click="showDeveloping('AIAG 8D报告管理与追踪')">8D报告管理与追踪</a-menu-item>
+              <a-menu-item key="capa" @click="showDeveloping('纠正与预防措施(CAPA)管理')">纠正与预防措施管理</a-menu-item>
               <a-menu-item key="/production-quality/exception-handling/change-point-application"
-                @click="navigateTo('/production-quality/exception-handling/change-point-application')">变化点(4M1E)申请与评估</a-menu-item>
-              <a-menu-item key="capa" @click="showDeveloping('CAPA纠正预防措施')">纠正与预防措施 (CAPA)</a-menu-item>
-              <a-menu-item key="lpa" @click="showDeveloping('LPA分层审核')">LPA 分层过程审核计划执行</a-menu-item>
-              <a-menu-item key="audit" @click="showDeveloping('内外部体系审核')">内部/外部体系审核跟踪</a-menu-item>
-              <a-menu-item key="review" @click="showDeveloping('管理评审')">管理评审执行记录</a-menu-item>
+                @click="navigateTo('/production-quality/exception-handling/change-point-application')">变化点申请与评估</a-menu-item>
             </a-sub-menu>
 
-            <!-- 10. 知识、培训及系统设置 -->
-            <a-sub-menu key="more">
-              <template #title>✨ 知识与设置</template>
+            <!-- 8. 数字化追溯 (Digital Traceability) -->
+            <a-sub-menu key="digital-traceability">
+              <template #title>🔍 数字化追溯</template>
 
-              <!-- 知识、文档与培训 -->
-              <a-sub-menu key="knowledge">
-                <template #title>📁 知识、文档与培训</template>
-                <a-menu-item key="/documents" @click="navigateTo('/documents')">受控文档管理与发行</a-menu-item>
-                <a-menu-item key="experience" @click="showDeveloping('质量经验库/案例实践')">质量经验库 / 案例实践</a-menu-item>
-                <a-menu-item key="training" @click="showDeveloping('培训计划与考核')">培训计划、考核与记录</a-menu-item>
-                <a-menu-item key="/reports" @click="navigateTo('/reports')">质量报告</a-menu-item>
-                <a-menu-item key="/tools/msa" @click="navigateTo('/tools/msa')">MSA 测量系统分析</a-menu-item>
+              <a-sub-menu key="traceability-inquiry">
+                <template #title>🔎 追溯查询</template>
+                <a-menu-item key="full-link-traceability" @click="showDeveloping('全链路追溯查询')">全链路追溯查询</a-menu-item>
+                <a-menu-item key="product-genealogy" @click="showDeveloping('产品谱系图')">产品谱系图</a-menu-item>
+                <a-menu-item key="time-series-logic" @click="showDeveloping('时序逻辑视图')">时序逻辑视图</a-menu-item>
               </a-sub-menu>
 
-              <!-- 系统设置与集成 -->
-              <a-sub-menu key="system">
-                <template #title>⚙️ 系统设置与集成</template>
-                <a-menu-item key="/system" @click="navigateTo('/system')">系统概览</a-menu-item>
-                <a-menu-item key="/system/permission"
-                  @click="navigateTo('/system/permission')">组织架构与角色权限(RBAC)</a-menu-item>
-                <a-menu-item key="/system/schedule" @click="navigateTo('/system/schedule')">业务流转审批流配置</a-menu-item>
-                <a-menu-item key="/system/api-log" @click="navigateTo('/system/api-log')">模块集成监控日志</a-menu-item>
-                <a-menu-item key="/system/log" @click="navigateTo('/system/log')">系统操作日志及审计追溯</a-menu-item>
-                <a-menu-item key="/system/update-log" @click="navigateTo('/system/update-log')">系统更新日志</a-menu-item>
-                <a-menu-item key="/system/template" @click="navigateTo('/system/template')">系统模板</a-menu-item>
-                <a-menu-item key="/system/data-app" @click="navigateTo('/system/data-app')">数据应用</a-menu-item>
-                <a-menu-item key="/system/announcement" @click="navigateTo('/system/announcement')">系统公告</a-menu-item>
-                <a-menu-item key="/system/config" @click="navigateTo('/system/config')">系统配置</a-menu-item>
-                <a-menu-item key="/system/menu" @click="navigateTo('/system/menu')">菜单管理</a-menu-item>
-                <a-menu-item key="/system/monitor" @click="navigateTo('/system/monitor')">系统监控</a-menu-item>
-                <a-menu-item key="/system/data-dictionary"
-                  @click="navigateTo('/system/data-dictionary')">数据字典</a-menu-item>
+              <a-sub-menu key="forward-backward-analysis">
+                <template #title>🔁 正向与逆向分析</template>
+                <a-menu-item key="material-flow-tracking" @click="showDeveloping('物料流追踪')">物料流追踪</a-menu-item>
+                <a-menu-item key="quality-origin-analysis" @click="showDeveloping('质量溯源分析')">质量溯源分析</a-menu-item>
+                <a-menu-item key="similarity-risk" @click="showDeveloping('相似性风险预警')">相似性风险预警</a-menu-item>
               </a-sub-menu>
+
+              <a-sub-menu key="traceability-statistics">
+                <template #title>📈 统计与监控</template>
+                <a-menu-item key="completeness-report" @click="showDeveloping('追溯完整度报告')">追溯完整度报告</a-menu-item>
+                <a-menu-item key="supply-chain-coordination" @click="showDeveloping('供应链协调报告')">供应链协调报告</a-menu-item>
+              </a-sub-menu>
+            </a-sub-menu>
+
+            <!-- 9. 质量成本管理 (Cost of Quality) -->
+            <a-sub-menu key="cost-of-quality">
+              <template #title>💰 质量成本</template>
+              <a-menu-item key="coq-subject" @click="showDeveloping('质量成本科目定义')">质量成本科目定义</a-menu-item>
+              <a-menu-item key="coq-budget" @click="showDeveloping('质量成本预算与计划')">质量成本预算与计划</a-menu-item>
+              <a-menu-item key="coq-data" @click="showDeveloping('质量成本数据中心')">质量成本数据中心</a-menu-item>
+              <a-menu-item key="coq-accounting" @click="showDeveloping('质量成本核算单')">质量成本核算单</a-menu-item>
+              <a-menu-item key="coq-report" @click="showDeveloping('成效与改善报告看板')">成效与改善报告看板</a-menu-item>
+            </a-sub-menu>
+
+            <!-- 10. 知识库与培训 -->
+            <a-sub-menu key="knowledge">
+              <template #title>📁 知识库与培训</template>
+              <a-menu-item key="/documents" @click="navigateTo('/documents')">受控文档管理</a-menu-item>
+              <a-menu-item key="experience" @click="showDeveloping('质量经验库/案例最佳实践')">质量经验库</a-menu-item>
+              <a-menu-item key="training" @click="showDeveloping('培训计划、考核与记录体系')">培训管理</a-menu-item>
+            </a-sub-menu>
+
+            <!-- 11. 系统设置与集成 -->
+            <a-sub-menu key="system">
+              <template #title>⚙️ 系统设置</template>
+              <a-menu-item key="/system/permission" @click="navigateTo('/system/permission')">组织架构</a-menu-item>
+              <a-menu-item key="system-role" @click="showDeveloping('角色权限')">角色权限</a-menu-item>
+              <a-menu-item key="/system/schedule" @click="navigateTo('/system/schedule')">业务流转审批流配置</a-menu-item>
+              <a-menu-item key="/system/api-log" @click="navigateTo('/system/api-log')">模块集成监控层</a-menu-item>
+              <a-menu-item key="/system/log" @click="navigateTo('/system/log')">系统操作日志</a-menu-item>
+              <a-menu-item key="system-audit" @click="showDeveloping('审计追踪')">审计追踪</a-menu-item>
+              <a-menu-item key="/system/config" @click="navigateTo('/system/config')">系统参数</a-menu-item>
+              <a-menu-item key="/system/template" @click="navigateTo('/system/template')">系统模板</a-menu-item>
+              <a-menu-item key="/system/data-app" @click="navigateTo('/system/data-app')">数据应用</a-menu-item>
+              <a-menu-item key="/system/update-log" @click="navigateTo('/system/update-log')">系统更新日志</a-menu-item>
+              <a-menu-item key="/system/announcement" @click="navigateTo('/system/announcement')">系统公告</a-menu-item>
+              <a-menu-item key="system-config-sys" @click="showDeveloping('系统配置')">系统配置</a-menu-item>
+              <a-menu-item key="/system/menu" @click="navigateTo('/system/menu')">菜单管理</a-menu-item>
+              <a-menu-item key="/system/monitor" @click="navigateTo('/system/monitor')">系统监控</a-menu-item>
+              <a-menu-item key="/system/data-dictionary"
+                @click="navigateTo('/system/data-dictionary')">数据字典</a-menu-item>
             </a-sub-menu>
           </a-menu>
         </div>

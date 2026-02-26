@@ -1,380 +1,306 @@
 <template>
-  <div class="update-log-container">
-    <!-- 工具栏 -->
-    <div class="toolbar">
-      <a-space>
-        <a-button type="primary" @click="handleCreate">
-          <template #icon><PlusOutlined /></template>
-          新增更新日志
-        </a-button>
-        <a-button @click="handleRefresh">
-          <template #icon><ReloadOutlined /></template>
-          刷新
-        </a-button>
-      </a-space>
+  <div class="prd-container">
+    <div class="prd-sidebar">
+      <div class="sidebar-header">
+        <h3>需求文档 (PRD)</h3>
+      </div>
+      <a-tree v-if="treeData.length > 0" :tree-data="treeData" :default-expand-all="true" @select="onSelect"
+        blockNode />
+      <div v-else style="padding: 24px; text-align: center; color: #999;">
+        未找到文档
+      </div>
     </div>
-
-    <!-- 搜索表单 -->
-    <div class="search-form">
-      <a-form layout="inline" :model="searchForm">
-        <a-form-item label="版本号">
-          <a-input v-model:value="searchForm.version" placeholder="请输入版本号" style="width: 150px" />
-        </a-form-item>
-        <a-form-item label="更新类型">
-          <a-select v-model:value="searchForm.updateType" placeholder="请选择" style="width: 120px" allow-clear>
-            <a-select-option value="feature">新功能</a-select-option>
-            <a-select-option value="fix">修复</a-select-option>
-            <a-select-option value="optimize">优化</a-select-option>
-            <a-select-option value="breaking">重大变更</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="状态">
-          <a-select v-model:value="searchForm.status" placeholder="请选择" style="width: 120px" allow-clear>
-            <a-select-option value="draft">草稿</a-select-option>
-            <a-select-option value="published">已发布</a-select-option>
-            <a-select-option value="archived">已归档</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="关键词">
-          <a-input v-model:value="searchForm.keyword" placeholder="标题或内容" style="width: 200px" />
-        </a-form-item>
-        <a-form-item>
-          <a-space>
-            <a-button type="primary" @click="handleSearch">
-              <template #icon><SearchOutlined /></template>
-              查询
-            </a-button>
-            <a-button @click="handleReset">重置</a-button>
-          </a-space>
-        </a-form-item>
-      </a-form>
-    </div>
-
-    <!-- 数据表格 -->
-    <div class="table-container">
-      <a-table
-        :columns="columns"
-        :data-source="dataSource"
-        :loading="loading"
-        :pagination="pagination"
-        @change="handleTableChange"
-        row-key="id"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'version'">
-            <a-tag color="blue">{{ record.version }}</a-tag>
-          </template>
-          <template v-else-if="column.key === 'updateType'">
-            <a-tag :color="getUpdateTypeColor(record.updateType)">
-              {{ getUpdateTypeText(record.updateType) }}
-            </a-tag>
-          </template>
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="getStatusColor(record.status)">
-              {{ getStatusText(record.status) }}
-            </a-tag>
-          </template>
-          <template v-else-if="column.key === 'affectedModules'">
-            <a-space>
-              <a-tag v-for="module in record.affectedModules.slice(0, 2)" :key="module">
-                {{ module }}
-              </a-tag>
-              <a-tag v-if="record.affectedModules.length > 2">
-                +{{ record.affectedModules.length - 2 }}
-              </a-tag>
-            </a-space>
-          </template>
-          <template v-else-if="column.key === 'action'">
-            <a-space>
-              <a-button type="link" size="small" @click="handleView(record)">查看</a-button>
-              <a-button type="link" size="small" @click="handleEdit(record)" v-if="record.status === 'draft'">
-                编辑
-              </a-button>
-              <a-button type="link" size="small" @click="handlePublish(record)" v-if="record.status === 'draft'">
-                发布
-              </a-button>
-              <a-button type="link" size="small" @click="handleArchive(record)" v-if="record.status === 'published'">
-                归档
-              </a-button>
-              <a-popconfirm
-                title="确定要删除这条更新日志吗？"
-                @confirm="handleDelete(record)"
-                v-if="record.status === 'draft'"
-              >
-                <a-button type="link" size="small" danger>删除</a-button>
-              </a-popconfirm>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
+    <div class="prd-content">
+      <template v-if="activeNode">
+        <h2 class="doc-title">{{ activeNode.title }}</h2>
+        <div v-if="isMarkdown" class="markdown-body" v-html="renderedContent"></div>
+        <pre v-else class="text-body">{{ activeNode.content }}</pre>
+      </template>
+      <div v-else class="empty-state">
+        <a-empty description="请在左侧选择要查看的文档" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons-vue'
-import type { UpdateLog, UpdateLogQueryParams } from '@/types'
-import {
-  getUpdateLogs,
-  deleteUpdateLog,
-  publishUpdateLog,
-  archiveUpdateLog
-} from '@/api/updateLog'
+  import { ref, computed, onMounted } from 'vue';
+  import { marked } from 'marked';
 
-const router = useRouter()
+  // 读取项目里所有的PRD markdown 和 txt
+  // glob 的以 '/' 开头会以项目根目录为基准解析
+  const modules = import.meta.glob('/PRD/**/*.{md,txt}', { as: 'raw', eager: true });
 
-// 搜索表单
-const searchForm = reactive<UpdateLogQueryParams>({
-  page: 1,
-  pageSize: 20,
-  version: '',
-  updateType: undefined,
-  status: undefined,
-  keyword: ''
-})
-
-// 表格数据
-const dataSource = ref<UpdateLog[]>([])
-const loading = ref(false)
-const pagination = reactive({
-  current: 1,
-  pageSize: 20,
-  total: 0,
-  showSizeChanger: true,
-  showQuickJumper: true,
-  showTotal: (total: number) => `共 ${total} 条记录`
-})
-
-// 表格列定义
-const columns = [
-  {
-    title: '版本号',
-    dataIndex: 'version',
-    key: 'version',
-    width: 120
-  },
-  {
-    title: '标题',
-    dataIndex: 'title',
-    key: 'title',
-    ellipsis: true
-  },
-  {
-    title: '更新类型',
-    dataIndex: 'updateType',
-    key: 'updateType',
-    width: 100
-  },
-  {
-    title: '影响模块',
-    dataIndex: 'affectedModules',
-    key: 'affectedModules',
-    width: 200
-  },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    key: 'status',
-    width: 100
-  },
-  {
-    title: '发布时间',
-    dataIndex: 'publishedAt',
-    key: 'publishedAt',
-    width: 180,
-    customRender: ({ text }: any) => text ? new Date(text).toLocaleString('zh-CN') : '-'
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 250,
-    fixed: 'right'
+  interface TreeNode {
+    title: string;
+    key: string;
+    isLeaf?: boolean;
+    content?: string;
+    children?: TreeNode[];
+    selectable?: boolean;
   }
-]
 
-// 加载数据
-const loadData = async () => {
-  loading.value = true
-  try {
-    const params: UpdateLogQueryParams = {
-      ...searchForm,
-      page: pagination.current,
-      pageSize: pagination.pageSize
+  const treeData = ref < TreeNode[] > ([]);
+  const activeNode = ref < TreeNode | null > (null);
+
+  const buildTree = (records: Record<string, string>) => {
+    const root: TreeNode[] = [];
+
+    for (const [path, content] of Object.entries(records)) {
+      // path 类似 '/PRD/基础数据/物料产品档案.md'
+      const match = path.match(/\/PRD\/(.+)$/);
+      if (!match) continue;
+
+      const relativePath = match[1]; // '基础数据/物料产品档案.md'
+      const parts = relativePath.split('/');
+
+      let currentLevel = root;
+      let currentKey = '';
+
+      parts.forEach((part, index) => {
+        currentKey += (currentKey ? '/' : '') + part;
+        const isLeaf = index === parts.length - 1;
+
+        let existingNode = currentLevel.find(n => n.title === part);
+        if (!existingNode) {
+          existingNode = {
+            title: part,
+            key: currentKey,
+            isLeaf,
+            selectable: isLeaf,
+          };
+          if (isLeaf) {
+            existingNode.content = content as string;
+          } else {
+            existingNode.children = [];
+          }
+          currentLevel.push(existingNode);
+        }
+
+        if (!isLeaf) {
+          currentLevel = existingNode.children!;
+        }
+      });
     }
-    
-    const response = await getUpdateLogs(params)
-    if (response.success) {
-      dataSource.value = response.data.list
-      pagination.total = response.data.total
-    } else {
-      message.error(response.message)
+    return root;
+  };
+
+  onMounted(() => {
+    treeData.value = buildTree(modules as Record<string, string>);
+  });
+
+  const onSelect = (selectedKeys: any[], e: any) => {
+    const node = e.node.dataRef as TreeNode;
+    if (node && node.isLeaf) {
+      activeNode.value = node;
     }
-  } catch (error) {
-    message.error('加载数据失败')
-    console.error(error)
-  } finally {
-    loading.value = false
-  }
-}
+  };
 
-// 搜索
-const handleSearch = () => {
-  pagination.current = 1
-  loadData()
-}
+  const isMarkdown = computed(() => {
+    if (!activeNode.value) return false;
+    return activeNode.value.title.toLowerCase().endsWith('.md');
+  });
 
-// 重置
-const handleReset = () => {
-  searchForm.version = ''
-  searchForm.updateType = undefined
-  searchForm.status = undefined
-  searchForm.keyword = ''
-  pagination.current = 1
-  loadData()
-}
-
-// 刷新
-const handleRefresh = () => {
-  loadData()
-}
-
-// 表格变化
-const handleTableChange = (pag: any) => {
-  pagination.current = pag.current
-  pagination.pageSize = pag.pageSize
-  loadData()
-}
-
-// 新增
-const handleCreate = () => {
-  router.push('/system/update-log/create')
-}
-
-// 查看
-const handleView = (record: UpdateLog) => {
-  router.push(`/system/update-log/detail/${record.id}`)
-}
-
-// 编辑
-const handleEdit = (record: UpdateLog) => {
-  router.push(`/system/update-log/edit/${record.id}`)
-}
-
-// 发布
-const handlePublish = async (record: UpdateLog) => {
-  try {
-    const response = await publishUpdateLog(record.id)
-    if (response.success) {
-      message.success('发布成功')
-      loadData()
-    } else {
-      message.error(response.message)
-    }
-  } catch (error) {
-    message.error('发布失败')
-    console.error(error)
-  }
-}
-
-// 归档
-const handleArchive = async (record: UpdateLog) => {
-  try {
-    const response = await archiveUpdateLog(record.id)
-    if (response.success) {
-      message.success('归档成功')
-      loadData()
-    } else {
-      message.error(response.message)
-    }
-  } catch (error) {
-    message.error('归档失败')
-    console.error(error)
-  }
-}
-
-// 删除
-const handleDelete = async (record: UpdateLog) => {
-  try {
-    const response = await deleteUpdateLog(record.id)
-    if (response.success) {
-      message.success('删除成功')
-      loadData()
-    } else {
-      message.error(response.message)
-    }
-  } catch (error) {
-    message.error('删除失败')
-    console.error(error)
-  }
-}
-
-// 辅助函数
-const getUpdateTypeColor = (type: string) => {
-  const colorMap: Record<string, string> = {
-    feature: 'green',
-    fix: 'orange',
-    optimize: 'blue',
-    breaking: 'red'
-  }
-  return colorMap[type] || 'default'
-}
-
-const getUpdateTypeText = (type: string) => {
-  const textMap: Record<string, string> = {
-    feature: '新功能',
-    fix: '修复',
-    optimize: '优化',
-    breaking: '重大变更'
-  }
-  return textMap[type] || type
-}
-
-const getStatusColor = (status: string) => {
-  const colorMap: Record<string, string> = {
-    draft: 'default',
-    published: 'success',
-    archived: 'warning'
-  }
-  return colorMap[status] || 'default'
-}
-
-const getStatusText = (status: string) => {
-  const textMap: Record<string, string> = {
-    draft: '草稿',
-    published: '已发布',
-    archived: '已归档'
-  }
-  return textMap[status] || status
-}
-
-// 初始化
-onMounted(() => {
-  loadData()
-})
+  const renderedContent = computed(() => {
+    if (!isMarkdown.value || !activeNode.value?.content) return '';
+    return marked.parse(activeNode.value.content);
+  });
 </script>
 
 <style scoped>
-.update-log-container {
-  padding: 24px;
-  background: #fff;
-  min-height: calc(100vh - 104px);
-}
+  .prd-container {
+    display: flex;
+    height: calc(100vh - 104px);
+    background: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
 
-.toolbar {
-  margin-bottom: 16px;
-}
+  .prd-sidebar {
+    width: 320px;
+    border-right: 1px solid #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    background-color: #fafafa;
+  }
 
-.search-form {
-  margin-bottom: 16px;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 4px;
-}
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fff;
+  }
 
-.table-container {
-  margin-top: 16px;
-}
+  .sidebar-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .prd-sidebar :deep(.ant-tree) {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 8px;
+    background-color: transparent;
+  }
+
+  .prd-sidebar :deep(.ant-tree-node-content-wrapper) {
+    width: 100%;
+  }
+
+  .prd-content {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+    background: #fff;
+  }
+
+  .doc-title {
+    margin-top: 0;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eaecef;
+    font-size: 28px;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .empty-state {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .text-body {
+    white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+    background: #f9fafb;
+    padding: 24px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+  }
+
+  /* 基于 GitHub 风格的 Markdown 样式 */
+  .markdown-body {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #24292f;
+    word-wrap: break-word;
+  }
+
+  .markdown-body :deep(h1),
+  .markdown-body :deep(h2),
+  .markdown-body :deep(h3),
+  .markdown-body :deep(h4),
+  .markdown-body :deep(h5),
+  .markdown-body :deep(h6) {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .markdown-body :deep(h1) {
+    font-size: 2em;
+    border-bottom: 1px solid #d0d7de;
+    padding-bottom: .3em;
+  }
+
+  .markdown-body :deep(h2) {
+    font-size: 1.5em;
+    border-bottom: 1px solid #d0d7de;
+    padding-bottom: .3em;
+  }
+
+  .markdown-body :deep(h3) {
+    font-size: 1.25em;
+  }
+
+  .markdown-body :deep(h4) {
+    font-size: 1em;
+  }
+
+  .markdown-body :deep(p) {
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+
+  .markdown-body :deep(code) {
+    padding: .2em .4em;
+    margin: 0;
+    font-size: 85%;
+    background-color: rgba(175, 184, 193, 0.2);
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  }
+
+  .markdown-body :deep(pre) {
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f6f8fa;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+
+  .markdown-body :deep(pre code) {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  .markdown-body :deep(blockquote) {
+    padding: 0 1em;
+    color: #57606a;
+    border-left: .25em solid #d0d7de;
+    margin: 0 0 16px 0;
+  }
+
+  .markdown-body :deep(ul),
+  .markdown-body :deep(ol) {
+    padding-left: 2em;
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+
+  .markdown-body :deep(li) {
+    word-wrap: break-all;
+  }
+
+  .markdown-body :deep(li > p) {
+    margin-top: 16px;
+  }
+
+  .markdown-body :deep(table) {
+    border-spacing: 0;
+    border-collapse: collapse;
+    margin-top: 0;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+
+  .markdown-body :deep(table th),
+  .markdown-body :deep(table td) {
+    padding: 6px 13px;
+    border: 1px solid #d0d7de;
+  }
+
+  .markdown-body :deep(table tr) {
+    background-color: #ffffff;
+    border-top: 1px solid #d0d7de;
+  }
+
+  .markdown-body :deep(table tr:nth-child(2n)) {
+    background-color: #f6f8fa;
+  }
+
+  .markdown-body :deep(img) {
+    max-width: 100%;
+    box-sizing: content-box;
+  }
 </style>
