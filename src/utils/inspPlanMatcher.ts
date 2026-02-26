@@ -52,12 +52,14 @@ export interface MatchResult {
 /**
  * 计算方案与上下文的匹配分数
  * 分数越高，优先级越高
+ * NOTE: 兼容新旧模型 — 新模型使用 inspType/planStatus，旧模型使用 contextType/status
  */
 function calculateMatchScore(plan: InspPlan, context: InspectionContext): number {
   let score = 0
   
-  // 基础分：业务类型必须匹配
-  if (plan.contextType !== context.contextType) {
+  // 基础分：业务类型必须匹配（兼容新旧字段）
+  const planContextType = plan.contextType ?? plan.inspType
+  if (planContextType !== context.contextType) {
     return -1 // 不匹配
   }
   
@@ -69,11 +71,6 @@ function calculateMatchScore(plan: InspPlan, context: InspectionContext): number
   // 物料匹配（+100分）
   if (plan.materialId && plan.materialId === context.materialId) {
     score += 100
-  }
-  
-  // 物料组匹配（+50分）
-  if (plan.materialGroupId && plan.materialGroupId === context.materialGroupId) {
-    score += 50
   }
   
   // 供应商匹配（+80分，仅 IQC）
@@ -92,7 +89,8 @@ function calculateMatchScore(plan: InspPlan, context: InspectionContext): number
   }
   
   // 使用方案自身的优先级进行微调（优先级值越小越优先，所以取负）
-  score -= plan.priority * 0.1
+  const priority = plan.priority ?? 50
+  score -= priority * 0.1
   
   return score
 }
@@ -105,8 +103,6 @@ function getMatchTypeDescription(plan: InspPlan, context: InspectionContext): st
   
   if (plan.materialId && plan.materialId === context.materialId) {
     parts.push('物料')
-  } else if (plan.materialGroupId && plan.materialGroupId === context.materialGroupId) {
-    parts.push('物料组')
   }
   
   if (context.contextType === 'IQC' && plan.supplierId && plan.supplierId === context.supplierId) {
@@ -148,8 +144,11 @@ function getMatchTypeDescription(plan: InspPlan, context: InspectionContext): st
  * }
  */
 export function findBestPlan(plans: InspPlan[], context: InspectionContext): MatchResult {
-  // 过滤出已批准的方案
-  const activePlans = plans.filter(p => p.status === 'APPROVED')
+  // 过滤出有效的方案（兼容新旧模型状态字段）
+  const activePlans = plans.filter(p => {
+    const status = p.planStatus ?? p.status
+    return status === 'ACTIVE' || status === 'APPROVED'
+  })
   
   if (activePlans.length === 0) {
     return {
@@ -207,7 +206,7 @@ export function findBestPlansForBatch(
 }
 
 /**
- * 验证方案配置的完整性
+ * 验证方案配置的完整性（兼容新模型）
  * 
  * @param plan 检验方案
  * @returns 验证结果
@@ -220,26 +219,41 @@ export function validatePlanConfiguration(plan: InspPlan): {
   const errors: string[] = []
   const warnings: string[] = []
   
-  // 必填项检查
-  if (!plan.templateCode) {
-    errors.push('未关联检验模板')
+  // 必填项检查（兼容新旧模型）
+  if (!plan.schemeId && !plan.templateCode) {
+    errors.push('未关联检验方案或检验模板')
   }
   
-  if (!plan.contextType) {
-    errors.push('未指定业务类型')
+  const contextType = plan.contextType ?? plan.inspType
+  if (!contextType) {
+    errors.push('未指定检验类型')
   }
   
   // 业务逻辑检查
-  if (plan.contextType === 'IQC' && !plan.materialId && !plan.materialGroupId) {
-    warnings.push('IQC 方案建议至少指定物料或物料组')
+  if (contextType === 'IQC' && !plan.materialId) {
+    warnings.push('IQC 计划建议至少指定物料')
   }
   
-  if (plan.contextType === 'IPQC' && !plan.operationNo) {
-    warnings.push('IPQC 方案建议指定工序号')
+  if (contextType === 'IPQC' && !plan.operationNo) {
+    warnings.push('IPQC 计划建议指定工序号')
+  }
+  
+  // 新模型：触发配置完整性检查
+  if (plan.triggerType === 'EVENT' && !plan.eventTrigger?.erpDocType) {
+    warnings.push('事件驱动触发器未配置 ERP 单据类型')
+  }
+  
+  if (plan.triggerType === 'TIME' && !plan.timeTrigger?.frequencyType && !plan.timeTrigger?.cronExpression) {
+    warnings.push('周期驱动触发器未配置频率或 Cron 表达式')
+  }
+  
+  if (plan.triggerType === 'QUANTITY' && !plan.quantityTrigger?.quantityThreshold) {
+    warnings.push('数量驱动触发器未配置阈值')
   }
   
   // 优先级检查
-  if (plan.priority < 0 || plan.priority > 100) {
+  const priority = plan.priority ?? 50
+  if (priority < 0 || priority > 100) {
     warnings.push('优先级建议在 0-100 范围内')
   }
   

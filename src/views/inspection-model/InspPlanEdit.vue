@@ -352,7 +352,7 @@
 
   // --- 操作方法 ---
   const handleBack = () => {
-    router.push('/inspection-model/insp-plans')
+    router.push('/inspection-model/insp-schemes')
   }
 
   const handleSave = async () => {
@@ -360,7 +360,7 @@
       saving.value = true
       await formRef.value?.validate()
       message.success('保存成功')
-      router.push('/inspection-model/insp-plans')
+      router.push('/inspection-model/insp-schemes')
     } catch (e) {
       message.error('请完善必填项')
     } finally {

@@ -291,11 +291,11 @@
 
   // --- 操作 ---
   const handleAdd = () => {
-    router.push('/inspection-model/insp-plans/create')
+    router.push('/inspection-model/insp-schemes/create')
   }
 
   const handleView = (record: any) => {
-    router.push(`/inspection-model/insp-plans/view/${record.id}`)
+    router.push(`/inspection-model/insp-schemes/view/${record.id}`)
   }
 
   const handleEdit = (record?: any) => {
@@ -309,7 +309,7 @@
       message.warning('集团级方案不可直接编辑，请复制为本地方案后修改')
       return
     }
-    router.push(`/inspection-model/insp-plans/edit/${item.id}`)
+    router.push(`/inspection-model/insp-schemes/edit/${item.id}`)
   }
 
   const handleBatchDelete = () => {

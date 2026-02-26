@@ -24,7 +24,8 @@
                 @click="navigateTo('/basic-data/customer-archive')">客户档案</a-menu-item>
               <a-menu-item key="/basic-data/supplier-archive"
                 @click="navigateTo('/basic-data/supplier-archive')">供应商档案</a-menu-item>
-              <a-menu-item key="guest-supplier" @click="showDeveloping('客供关系映射')">客供关系映射</a-menu-item>
+              <a-menu-item key="/basic-data/customer-supplier-mapping"
+                @click="navigateTo('/basic-data/customer-supplier-mapping')">客供关系映射</a-menu-item>
               <a-menu-item key="/basic-data/material-category"
                 @click="navigateTo('/basic-data/material-category')">物料分类</a-menu-item>
               <a-menu-item key="/basic-data/material" @click="navigateTo('/basic-data/material')">物料档案</a-menu-item>
@@ -35,7 +36,8 @@
               <a-menu-item key="/basic-data/storage-location"
                 @click="navigateTo('/basic-data/storage-location')">地点存储</a-menu-item>
               <a-menu-item key="/basic-data/unit" @click="navigateTo('/basic-data/unit')">计量单位</a-menu-item>
-              <a-menu-item key="csr" @click="showDeveloping('顾客特殊要求(CSR)')">顾客特殊要求(CSR)</a-menu-item>
+              <a-menu-item key="/basic-data/csr-management"
+                @click="navigateTo('/basic-data/csr-management')">顾客特殊要求(CSR)</a-menu-item>
               <a-menu-item key="tooling-die" @click="showDeveloping('模具与工装档案')">模具与工装档案</a-menu-item>
             </a-sub-menu>
 
@@ -54,9 +56,10 @@
                 @click="navigateTo('/inspection-model/sampling-plans')">抽样方案</a-menu-item>
               <a-menu-item key="/inspection-model/insp-templates"
                 @click="navigateTo('/inspection-model/insp-templates')">检验模板</a-menu-item>
-              <a-menu-item key="/inspection-model/insp-plans"
-                @click="navigateTo('/inspection-model/insp-plans')">检验方案</a-menu-item>
-              <a-menu-item key="insp-plans-model" @click="showDeveloping('检验计划模型')">检验计划模型</a-menu-item>
+              <a-menu-item key="/inspection-model/insp-schemes"
+                @click="navigateTo('/inspection-model/insp-schemes')">检验方案</a-menu-item>
+              <a-menu-item key="/inspection-model/insp-plan-model"
+                @click="navigateTo('/inspection-model/insp-plan-model')">检验计划模型</a-menu-item>
               <a-menu-item key="/inspection-model/gauge-ledgers"
                 @click="navigateTo('/inspection-model/gauge-ledgers')">计量器具台账</a-menu-item>
               <a-menu-item key="barcode-label" @click="showDeveloping('追溯条码与标签模板')">追溯条码与标签模板</a-menu-item>

@@ -524,42 +524,164 @@ export interface InspStrategy extends BaseEntity {
   description?: string
 }
 
-/** 检验方案（旧架构，保留兼容性） */
+/** 检验计划触发器类型 */
+export type PlanTriggerType = 'EVENT' | 'TIME' | 'QUANTITY' | 'MANUAL'
+
+/** 检验计划状态（新模型，含挂起） */
+export type InspPlanModelStatus = 'DRAFT' | 'ACTIVE' | 'SUSPENDED' | 'OBSOLETE'
+
+/** 事件触发配置 */
+export interface EventTriggerConfig {
+  /** ERP 单据类型 (如: PURCHASE_RECEIVE, PRODUCTION_ORDER) */
+  erpDocType?: string
+  /** ERP 单据状态触发条件 (如: SUBMITTED, APPROVED) */
+  erpDocStatus?: string
+  /** 自定义事件名称 (如: material_arrival) */
+  customEvent?: string
+  /** 匹配条件描述 */
+  matchDescription?: string
+}
+
+/** 周期触发配置 */
+export interface TimeTriggerConfig {
+  /** Cron 表达式 (如: 0 0 8 * * ?) */
+  cronExpression?: string
+  /** 频率类型: hourly/daily/weekly/monthly */
+  frequencyType?: 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MONTHLY'
+  /** 频率值 (如: 每4小时 -> frequencyType=HOURLY, frequencyValue=4) */
+  frequencyValue?: number
+  /** 执行时间描述 */
+  scheduleDescription?: string
+}
+
+/** 数量/批次触发配置 */
+export interface QuantityTriggerConfig {
+  /** 每 N 件/模触发 */
+  quantityThreshold?: number
+  /** 单位: PIECES / MOLD / BATCH */
+  quantityUnit?: 'PIECES' | 'MOLD' | 'BATCH'
+}
+
+/** 参数覆盖项 */
+export interface ParameterOverride {
+  /** 方案明细ID (关联 InspSchemeDetail.id) */
+  schemeDetailId: string
+  /** 项目名称（冗余展示） */
+  inspItemName?: string
+  /** 覆盖的目标值 */
+  targetValue?: number
+  /** 覆盖的上限 */
+  upperLimit?: number
+  /** 覆盖的下限 */
+  lowerLimit?: number
+  /** 覆盖的量检具类型ID */
+  gaugeTypeId?: string
+  /** 覆盖的量检具类型名称 */
+  gaugeTypeName?: string
+  /** 覆盖备注 */
+  overrideReason?: string
+}
+
+/** 快速响应配置 */
+export interface QuickResponseConfig {
+  /** 是否启用快速响应 */
+  enabled: boolean
+  /** 响应级别: NORMAL / HIGH / CRITICAL */
+  responseLevel?: 'NORMAL' | 'HIGH' | 'CRITICAL'
+  /** 关联锁定的不良现象ID列表 */
+  lockedPhenomenonIds?: string[]
+  /** 是否发送邮件告警 */
+  emailAlert?: boolean
+  /** 邮件接收人列表 */
+  emailRecipients?: string[]
+  /** 是否发送钉钉告警 */
+  dingTalkAlert?: boolean
+  /** 钉钉群Webhook或接收人 */
+  dingTalkRecipients?: string[]
+  /** 告警消息模板 */
+  alertTemplate?: string
+}
+
+/** 不良处理方式 */
+export type DefectDisposition = 'SCRAP' | 'REWORK' | 'CONCESSION' | 'RETURN_SUPPLIER'
+
+/** 检验计划（新模型） */
 export interface InspPlan extends BaseEntity {
-  orgId: string
+  /** 组织机构ID，NULL/空 表示集团级 */
+  orgId: string | null
+  /** 关联的检验方案ID */
+  schemeId?: string
+  /** 关联的检验方案名称（冗余） */
+  schemeName?: string
+  /** 计划编号，自动生成 */
   planCode: string
+  /** 计划名称 */
   planName: string
+  /** 版本号 */
   version: string
-  status: InspPlanStatus
-  /** 关联检验模板编码 */
-  templateCode: string
-  templateName?: string
-  /** 业务上下文类型 */
-  contextType: InspContextType
-  /** 物料ID */
+  /** 计划状态 */
+  planStatus: InspPlanModelStatus
+  /** 检验类型 */
+  inspType: InspContextType | 'PATROL'
+  /** 关联物料ID */
   materialId?: string
+  /** 关联物料编码（冗余） */
   materialCode?: string
+  /** 关联物料名称（冗余） */
   materialName?: string
-  /** 物料组ID */
-  materialGroupId?: string
-  /** 供应商ID（仅 IQC） */
+  /** 触发器类型 */
+  triggerType: PlanTriggerType
+  /** 事件触发配置 */
+  eventTrigger?: EventTriggerConfig
+  /** 周期触发配置 */
+  timeTrigger?: TimeTriggerConfig
+  /** 数量触发配置 */
+  quantityTrigger?: QuantityTriggerConfig
+  /** 匹配规则 JSON（兼容旧字段，存储 ERP 单据匹配逻辑等） */
+  matchRules?: Record<string, any>
+  /** 默认检验员ID */
+  executorId?: string
+  /** 默认检验员名称 */
+  executorName?: string
+  /** 备选检验员ID */
+  backupExecutorId?: string
+  /** 备选检验员名称 */
+  backupExecutorName?: string
+  /** 审核人ID */
+  reviewerId?: string
+  /** 审核人名称 */
+  reviewerName?: string
+  /** 参数覆盖列表（对方案明细的阈值微调） */
+  parameterOverrides?: ParameterOverride[]
+  /** 快速响应配置 */
+  quickResponse?: QuickResponseConfig
+  /** 不良处理方式 */
+  defectDisposition?: DefectDisposition
+  /** 复制来源计划ID（自关联，溯源） */
+  copyFromId?: string | null
+  /** 复制来源计划编码（冗余展示） */
+  copyFromCode?: string
+  /** 是否为最新版本 */
+  isLatestVersion: boolean
+  /** 描述/备注 */
+  description?: string
+  // --- 旧架构兼容字段 ---
+  /** 关联检验模板编码（旧） */
+  templateCode?: string
+  templateName?: string
+  contextType?: InspContextType
   supplierId?: string
   supplierName?: string
-  /** 客户ID（仅 OQC） */
   customerId?: string
   customerName?: string
-  /** 工序号（仅 IPQC） */
   operationNo?: string
   operationName?: string
-  /** IPQC 类型（仅 IPQC） */
   ipqcType?: IpqcType
-  /** 触发条件 */
-  triggerCondition: TriggerCondition
-  /** 触发条件值（如前N批） */
+  triggerCondition?: TriggerCondition
   triggerValue?: number
-  /** 优先级（数值越小优先级越高） */
-  priority: number
-  description?: string
+  priority?: number
+  /** 旧 status 兼容 */
+  status?: InspPlanStatus
 }
 
 // ===============================

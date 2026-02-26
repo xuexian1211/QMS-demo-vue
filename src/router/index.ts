@@ -700,6 +700,30 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: '/basic-data/customer-supplier-mapping',
+    name: 'CustomerSupplierMapping',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '客供关系映射' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/basic-data/CustomerSupplierMapping.vue')
+      }
+    ]
+  },
+  {
+    path: '/basic-data/csr-management',
+    name: 'CsrManagement',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '顾客特殊要求(CSR)' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/basic-data/csr-management/index.vue')
+      }
+    ]
+  },
+  {
     path: '/basic-data/storage-location',
     name: 'StorageLocation',
     component: () => import('@/layout/MainLayout.vue'),
@@ -908,9 +932,10 @@ const routes: RouteRecordRaw[] = [
   },
 
 
+  // ─── 检验方案（原 insp-plans → 重命名为 insp-schemes）─────────────
   {
-    path: '/inspection-model/insp-plans',
-    name: 'InspectionModelInspPlans',
+    path: '/inspection-model/insp-schemes',
+    name: 'InspectionModelInspSchemes',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案管理' },
     children: [
@@ -918,8 +943,8 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/insp-plans/create',
-    name: 'InspectionModelInspPlanCreate',
+    path: '/inspection-model/insp-schemes/create',
+    name: 'InspectionModelInspSchemeCreate',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案-新增', hideInMenu: true },
     children: [
@@ -927,8 +952,8 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/insp-plans/edit/:id',
-    name: 'InspectionModelInspPlanEdit',
+    path: '/inspection-model/insp-schemes/edit/:id',
+    name: 'InspectionModelInspSchemeEdit',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案-编辑', hideInMenu: true },
     children: [
@@ -936,12 +961,50 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/inspection-model/insp-plans/view/:id',
-    name: 'InspectionModelInspPlanView',
+    path: '/inspection-model/insp-schemes/view/:id',
+    name: 'InspectionModelInspSchemeView',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { title: '检验方案-查看', hideInMenu: true },
     children: [
       { path: '', component: () => import('@/views/inspection-model/InspSchemeEdit.vue') }
+    ]
+  },
+
+  // ─── 检验计划模型（全新模块）──────────────────────────────────
+  {
+    path: '/inspection-model/insp-plan-model',
+    name: 'InspPlanModelList',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '检验计划模型' },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/InspPlanModelList.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/insp-plan-model/create',
+    name: 'InspPlanModelCreate',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '检验计划-新增', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/InspPlanModelEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/insp-plan-model/edit/:id',
+    name: 'InspPlanModelEdit',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '检验计划-编辑', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/InspPlanModelEdit.vue') }
+    ]
+  },
+  {
+    path: '/inspection-model/insp-plan-model/view/:id',
+    name: 'InspPlanModelView',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '检验计划-查看', hideInMenu: true },
+    children: [
+      { path: '', component: () => import('@/views/inspection-model/InspPlanModelEdit.vue') }
     ]
   },
 

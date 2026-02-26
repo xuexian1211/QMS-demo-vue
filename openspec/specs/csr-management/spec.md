@@ -1,0 +1,44 @@
+# csr-management Specification
+
+## Purpose
+TBD - created by archiving change add-csr-management. Update Purpose after archive.
+## Requirements
+### Requirement: CSR 条款维护空间
+系统 MUST 能够按照客户版本维护客户特殊要求(CSR)协议，将原始规定分解为结构化的系统条款。
+
+#### Scenario: 录入新客户强控条款
+- **WHEN** 质量工程师为客户输入一条"强控"级别的过程要求（如"必须进行年度全尺寸检测"）
+- **THEN** 系统保存该条款的类型、严格度等级及附件关联，作为日后自动化判定和追踪的基础。
+
+### Requirement: CSR 业务流程映射矩阵
+系统 MUST 提供映射视图，将 CSR 条款关联到具体的物料、工厂或相关业务流程（如 FMEA、APQP、不合格品处理、文档管理等）。
+
+#### Scenario: 映射质量事故响应时间
+- **WHEN** 用户将"24h内回复3D，48h内回复8D"的要求映射到客诉(不合格品)处理流程
+- **THEN** 系统在生成对该客户的客诉单时，自动附加并应用这些时效维度的强控校验约束。
+
+### Requirement: CSR 任务自动化引擎
+系统 MUST 配备基于触发条件（Trigger_Condition）的自动化引擎，能够执行自动报告模板切换、超期预警以及强控项锁定功能。
+
+#### Scenario: 自动切换报告模板
+- **WHEN** 系统判定当前业务订单(如PPAP提交)的目标客户是特定客户（如特斯拉）
+- **THEN** 系统在报告生成页自动调出符合该客户专有格式的报告模板。
+
+#### Scenario: 强控频率校验锁定
+- **WHEN** 某客户要求"每500件做一次可靠性实验"，且当前生产报工刚好达到500件
+- **THEN** 系统自动弹窗并在前端与后台锁定相关出货/入库工序，直到质检员上传合格的实验报告解锁。
+
+### Requirement: CSR 合规性监控看板
+系统 MUST 提供图形化数据看板，监控全厂范围内CSR条款的履约状态。
+
+#### Scenario: 查看全厂 CSR 合规进度
+- **WHEN** 质量管理者打开合规性监控看板
+- **THEN** 系统展示CSR条款覆盖率、任务按时完成率以及客户外部审核发现点的相关分布图表。
+
+### Requirement: CSR 与 CTQ 的交互联动
+系统 MUST 支持基础数据层面 CTQ 指标与来源 CSR 的关联与联动警告。
+
+#### Scenario: CSR 版本更新提示 CTQ 同步
+- **WHEN** 客户的 CSR 协议版本发生更新（例如将某个关键尺寸的CPK要求从>1.33提高到了>1.67）
+- **THEN** CTQ 配置页面会展示"来源 CSR"超链接，并高亮系统提醒用户同步更新该部件的判定标准。
+
