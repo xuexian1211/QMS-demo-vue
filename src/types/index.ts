@@ -897,3 +897,105 @@ export interface DesignDocumentProgress {
   pendingTasks: number
   completionRate: number
 }
+
+// ===============================
+// 受控文档管理类型定义
+// ===============================
+
+/** 文档业务场景（一级分类） */
+export type DocBizScene =
+  | 'system-planning'      // 体系策划与基础管理
+  | 'product-design'       // 产品设计与开发 (APQP)
+  | 'production-process'   // 生产过程与现场执行
+  | 'quality-inspection'   // 质量检验与监控记录
+  | 'exception-management' // 异常管理与持续改进
+
+/** 二级模块枚举 */
+export type DocModule =
+  // 体系策划与基础管理下
+  | 'system-docs'        // 体系文件
+  | 'basic-data-docs'    // 基础数据图档
+  // 产品设计与开发下
+  | 'core-engineering'   // 核心工程图档
+  | 'five-tools'         // 五大工具文档
+  // 生产过程与现场执行下
+  | 'work-instructions'  // 作业指导书
+  | 'visual-management'  // 现场目视化
+  // 质量检验与监控记录下
+  | 'inspection-reports' // 检验报告
+  | 'test-reports'       // 实验/测试报告
+  // 异常管理与持续改进下
+  | 'ncr-handling'       // 不合格处理
+  | 'problem-solving'    // 问题解决
+  | 'audit-management'   // 审核管理
+
+/** 文档主存来源 */
+export type DocStorageSource = 'PLM' | 'QMS'
+
+/** 文档生命周期状态 */
+export type ControlledDocStatus = 'DRAFT' | 'IN_APPROVAL' | 'PUBLISHED' | 'OBSOLETE'
+
+/** 文档分类树节点 */
+export interface DocCategoryNode {
+  key: string
+  title: string
+  bizScene?: DocBizScene
+  docModule?: DocModule
+  /** 该分类的主存来源（同一模块下可能混合） */
+  primaryStorage?: DocStorageSource
+  /** 是否叶子节点 */
+  isLeaf?: boolean
+  /** 子节点 */
+  children?: DocCategoryNode[]
+}
+
+/** 受控文档实体 */
+export interface ControlledDocument extends BaseEntity {
+  /** 组织ID */
+  orgId: string
+  /** 文档编号 */
+  docNo: string
+  /** 文档名称 */
+  docName: string
+  /** 版本号 */
+  version: string
+  /** 一级分类 */
+  bizScene: DocBizScene
+  /** 二级模块 */
+  docModule: DocModule
+  /** 核心图文档类型（第三级，如 产品图纸/3D模型/BOM） */
+  docType: string
+  /** 主存来源：PLM 表示来自PLM系统（只读）; QMS 表示本地全生命周期管理 */
+  storageSource: DocStorageSource
+  /** 生命周期状态 */
+  status: ControlledDocStatus
+  /** 文件大小描述 */
+  fileSize?: string
+  /** 文件格式 */
+  fileFormat?: string
+  /** PLM 文档ID（storageSource=PLM 时有值） */
+  plmDocId?: string
+  /** PLM 最后同步时间 */
+  plmSyncTime?: string
+  /** 附件 ID 列表（storageSource=QMS 时有效） */
+  attachmentIds?: string[]
+  /** 上传人/同步人 */
+  uploader?: string
+  /** 发布时间 */
+  publishedAt?: string
+  /** 作废原因 */
+  obsoleteReason?: string
+  /** 备注 */
+  remark?: string
+}
+
+/** 受控文档查询参数 */
+export interface ControlledDocQueryParams {
+  bizScene?: DocBizScene
+  docModule?: DocModule
+  storageSource?: DocStorageSource
+  status?: ControlledDocStatus
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
