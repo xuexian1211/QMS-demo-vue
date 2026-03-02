@@ -1008,3 +1008,89 @@ export interface ControlledDocQueryParams {
   page?: number
   pageSize?: number
 }
+
+// ===============================
+// 检验任务自动生成与触发类型定义
+// ===============================
+
+/** 检验任务触发请求体 */
+export interface InspTaskTriggerPayload {
+  /** 组织/工厂 ID */
+  orgId: string
+  /** 检验类型: IQC / IPQC / FQC / OQC */
+  inspectType: InspContextType
+  /** 来源单据类型 (如: PUR_RECEIVE / PROD_ORDER / PROD_INBOUND / SALES_DELIVER) */
+  sourceBillType: string
+  /** 来源单据号 */
+  sourceBillNo: string
+  /** 物料编码 */
+  materialCode: string
+  /** 批次号 */
+  batchNo: string
+  /** 扩展上下文 (供应商、产线、客户等匹配维度) */
+  extContext?: Record<string, string>
+}
+
+/** 触发判定状态 */
+export type TriggerJudgmentStatus = 'SUCCESS' | 'IGNORED' | 'FAILED'
+
+/** 触发日志记录 */
+export interface TriggerLogRecord extends BaseEntity {
+  /** 请求唯一标识 */
+  requestId: string
+  /** 请求时间 */
+  requestTime: string
+  /** 来源系统名称 */
+  sourceSystem: string
+  /** 来源单据号 */
+  sourceBillNo: string
+  /** 来源单据类型 */
+  sourceBillType: string
+  /** 检验类型 */
+  inspectType: InspContextType
+  /** 物料编码 */
+  materialCode: string
+  /** 批次号 */
+  batchNo: string
+  /** 组织 ID */
+  orgId: string
+  /** 判定状态 */
+  judgmentStatus: TriggerJudgmentStatus
+  /** 匹配到的计划编号 (成功时有值) */
+  matchedPlanCode?: string
+  /** 生成的检验任务编号 (成功时有值) */
+  generatedTaskNo?: string
+  /** 判定详细原因 */
+  detailReason: string
+  /** 原始请求报文 JSON */
+  rawPayload?: string
+}
+
+/** 模拟触发链路节点 */
+export interface SimulationChainNode {
+  /** 步骤名称 */
+  stepName: string
+  /** 步骤结果: pass / fail / skip */
+  stepResult: 'pass' | 'fail' | 'skip'
+  /** 详细描述 */
+  description: string
+  /** 匹配到的数据 (如: 计划编号) */
+  matchedData?: string
+}
+
+/** 模拟触发结果 */
+export interface SimulationResult {
+  /** 是否建议生成任务 */
+  suggestGenerate: boolean
+  /** 判定链路 */
+  chain: SimulationChainNode[]
+  /** 最终结论 */
+  conclusion: string
+  /** 匹配到的计划信息 */
+  matchedPlan?: {
+    planCode: string
+    planName: string
+    schemeName: string
+    inspType: InspContextType
+  }
+}

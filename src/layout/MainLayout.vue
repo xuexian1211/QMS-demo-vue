@@ -118,6 +118,14 @@
                 <a-menu-item key="lab-report" @click="showDeveloping('实验室检测执行与报告')">实验室检测执行</a-menu-item>
                 <a-menu-item key="lab-device" @click="showDeveloping('检测仪器设备监控')">检测仪器设备监控</a-menu-item>
               </a-sub-menu>
+              <!-- 5.5 集成控制台 -->
+              <a-sub-menu key="integration-console">
+                <template #title>🔗 集成控制台</template>
+                <a-menu-item key="/system/task-trigger-simulator"
+                  @click="navigateTo('/system/task-trigger-simulator')">触发模拟器</a-menu-item>
+                <a-menu-item key="/system/task-trigger-log"
+                  @click="navigateTo('/system/task-trigger-log')">任务触发日志</a-menu-item>
+              </a-sub-menu>
             </a-sub-menu>
 
             <!-- 6. 质量检查与评价 (Check) -->
@@ -181,7 +189,8 @@
             <!-- 10. 知识库与培训 -->
             <a-sub-menu key="knowledge">
               <template #title>📁 知识库与培训</template>
-              <a-menu-item key="/quality-system/document-management" @click="navigateTo('/quality-system/document-management')">受控文档管理</a-menu-item>
+              <a-menu-item key="/quality-system/document-management"
+                @click="navigateTo('/quality-system/document-management')">受控文档管理</a-menu-item>
               <a-menu-item key="experience" @click="showDeveloping('质量经验库/案例最佳实践')">质量经验库</a-menu-item>
               <a-menu-item key="training" @click="showDeveloping('培训计划、考核与记录体系')">培训管理</a-menu-item>
             </a-sub-menu>
@@ -205,6 +214,7 @@
               <a-menu-item key="/system/monitor" @click="navigateTo('/system/monitor')">系统监控</a-menu-item>
               <a-menu-item key="/system/data-dictionary"
                 @click="navigateTo('/system/data-dictionary')">数据字典</a-menu-item>
+
             </a-sub-menu>
           </a-menu>
         </div>

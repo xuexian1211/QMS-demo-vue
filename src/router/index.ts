@@ -1114,6 +1114,26 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/views/inspection-model/GaugeLedgerDetail.vue') }
     ]
   },
+  // 检验任务触发模拟器
+  {
+    path: '/system/task-trigger-simulator',
+    name: 'TaskTriggerSimulator',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '触发模拟器' },
+    children: [
+      { path: '', component: () => import('@/views/system/TaskTriggerSimulator.vue') }
+    ]
+  },
+  // 检验任务触发日志
+  {
+    path: '/system/task-trigger-log',
+    name: 'TaskTriggerLog',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '任务触发日志' },
+    children: [
+      { path: '', component: () => import('@/views/system/TaskTriggerLog.vue') }
+    ]
+  },
 
 ]
 
