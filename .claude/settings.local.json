@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npx vite build)",
+      "Bash(grep -l \"lang.scss\\\\|lang=\"\"scss\"\"\" src/views/**/*.vue)"
+    ]
+  }
+}

@@ -516,16 +516,37 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/documents',
-    name: 'Documents',
+    path: '/quality-system/document-management',
+    name: 'DocumentManagement',
     component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '文档管理' },
+    meta: { title: '受控文档管理' },
     children: [
       {
         path: '',
         component: () => import('@/views/documents/DocumentManagement.vue')
       }
     ]
+  },
+  {
+    path: '/quality-system/document-management/create',
+    name: 'DocumentCreate',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '新增文档', hideInMenu: true },
+    children: [{ path: '', component: () => import('@/views/documents/DocumentEdit.vue') }]
+  },
+  {
+    path: '/quality-system/document-management/view/:id',
+    name: 'DocumentView',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '查看文档', hideInMenu: true },
+    children: [{ path: '', component: () => import('@/views/documents/DocumentEdit.vue') }]
+  },
+  {
+    path: '/quality-system/document-management/edit/:id',
+    name: 'DocumentEdit',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '编辑文档', hideInMenu: true },
+    children: [{ path: '', component: () => import('@/views/documents/DocumentEdit.vue') }]
   },
   {
     path: '/reports',

@@ -181,7 +181,7 @@
             <!-- 10. 知识库与培训 -->
             <a-sub-menu key="knowledge">
               <template #title>📁 知识库与培训</template>
-              <a-menu-item key="/documents" @click="navigateTo('/documents')">受控文档管理</a-menu-item>
+              <a-menu-item key="/quality-system/document-management" @click="navigateTo('/quality-system/document-management')">受控文档管理</a-menu-item>
               <a-menu-item key="experience" @click="showDeveloping('质量经验库/案例最佳实践')">质量经验库</a-menu-item>
               <a-menu-item key="training" @click="showDeveloping('培训计划、考核与记录体系')">培训管理</a-menu-item>
             </a-sub-menu>

@@ -989,6 +989,15 @@ export interface ControlledDocument extends BaseEntity {
   remark?: string
 }
 
+/** 文档版本记录 */
+export interface DocVersionRecord {
+  version: string
+  operator: string
+  operateTime: string
+  remark?: string
+  status: ControlledDocStatus
+}
+
 /** 受控文档查询参数 */
 export interface ControlledDocQueryParams {
   bizScene?: DocBizScene
