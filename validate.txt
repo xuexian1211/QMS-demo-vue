@@ -1,0 +1,39 @@
+﻿node.exe : Change 'add-laboratory-in
+spection-task' has issues
+所在位置 C:\Users\xuexian\AppData\Roamin
+g\npm\openspec.ps1:24 字符: 5
++     & "node$exe"  "$basedir/node_m
+odules/@fission-ai/openspec/bin/ope 
+...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSp 
+   ecified: (Change 'add-lab...ask  
+  ' has issues:String) [], Remote   
+ Exception
+    + FullyQualifiedErrorId : Nativ 
+   eCommandError
+ 
+鉁?[ERROR] laboratory-inspection/spec
+.md: ADDED "瀹為獙瀹や换鍔¤Е鍙? must contain
+ SHALL or MUST
+鉁?[ERROR] laboratory-inspection/spec
+.md: ADDED "鏍峰搧绠＄悊涓庣暀鏍? must contain
+ SHALL or MUST
+鉁?[ERROR] laboratory-inspection/spec
+.md: ADDED "鍙岃建鍒跺垎鍙? must contain SH
+ALL or MUST
+鉁?[ERROR] laboratory-inspection/spec
+.md: ADDED "鑷姩鍖栭噰闆嗕笌鎶ュ憡" must conta
+in SHALL or MUST
+鉁?[ERROR] laboratory-inspection/spec
+.md: ADDED "棰勮涓庝簰閿侀棴鐜? must contain
+ SHALL or MUST
+Next steps:
+  - Ensure change has deltas in spec
+s/: use headers ## ADDED/MODIFIED/RE
+MOVED/RENAMED Requirements
+  - Each requirement MUST include at
+ least one #### Scenario: block
+  - Debug parsed deltas: openspec ch
+ange show <id> --json --deltas-only

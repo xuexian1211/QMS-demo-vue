@@ -88,6 +88,123 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   },
+  // IQC 来料检验任务列表
+  {
+    path: '/production-quality/quality-inspection/iqc-task-list',
+    name: 'IqcTaskList',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: 'IQC来料检验任务' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/quality-inspection/IqcTaskList.vue')
+      }
+    ]
+  },
+  // IQC 检验执行页
+  {
+    path: '/production-quality/quality-inspection/iqc-task-execution/:id',
+    name: 'IqcTaskExecution',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: 'IQC检验执行', hideInMenu: true },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/quality-inspection/IqcTaskExecution.vue')
+      }
+    ]
+  },
+  // MRB 进料不良异常处理记录
+  {
+    path: '/production-quality/exception-handling/mrb-records',
+    name: 'MrbRecordList',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: 'MRB异常处理记录' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/exception-handling/MrbRecordList.vue')
+      }
+    ]
+  },
+  // 实验室检测任务看板
+  {
+    path: '/production-quality/laboratory/lab-task-board',
+    name: 'LabTaskBoard',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '实验室送检任务' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/laboratory/LabTaskBoard.vue')
+      }
+    ]
+  },
+  // 实验室检测执行列表
+  {
+    path: '/production-quality/laboratory/lab-task-execution',
+    name: 'LabTaskExecutionList',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '实验室检测执行' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/laboratory/LabTaskExecutionList.vue')
+      }
+    ]
+  },
+  // 实验室检测执行详情页（带任务ID参数）
+  {
+    path: '/production-quality/laboratory/lab-task-execution/:id',
+    name: 'LabTaskExecution',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '实验室检测执行', hideInMenu: true },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/laboratory/LabTaskExecution.vue')
+      }
+    ]
+  },
+  // 委外检测管理
+  {
+    path: '/production-quality/laboratory/outsource-test',
+    name: 'OutsourceTestManage',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '委外检测管理' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/laboratory/OutsourceTestManage.vue')
+      }
+    ]
+  },
+  // 留样管理台账
+  {
+    path: '/production-quality/laboratory/sample-retention',
+    name: 'SampleRetention',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '留样管理台账' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/laboratory/SampleRetention.vue')
+      }
+    ]
+  },
+  // 检测/试验报告库
+  {
+    path: '/production-quality/laboratory/report-library',
+    name: 'LabReportLibrary',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '检测/试验报告库' },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/production-quality/laboratory/LabReportLibrary.vue')
+      }
+    ]
+  },
   {
     path: '/production-quality/quality-inspection/ipqc-checklist',
     name: 'IPQCChecklist',

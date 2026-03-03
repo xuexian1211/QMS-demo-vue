@@ -83,9 +83,13 @@
                 <a-menu-item key="/supplier" @click="navigateTo('/supplier')">供应商准入与评估</a-menu-item>
                 <a-menu-item key="supplier-ppap" @click="showDeveloping('供应商PPAP管理')">供应商PPAP管理</a-menu-item>
                 <a-menu-item key="/production-quality/quality-inspection/iqc-checklist"
-                  @click="navigateTo('/production-quality/quality-inspection/iqc-checklist')">IQC来料检验</a-menu-item>
+                  @click="navigateTo('/production-quality/quality-inspection/iqc-checklist')">IQC来料检验单</a-menu-item>
+                <a-menu-item key="/production-quality/quality-inspection/iqc-task-list"
+                  @click="navigateTo('/production-quality/quality-inspection/iqc-task-list')">IQC来料检验任务</a-menu-item>
                 <a-menu-item key="/production-quality/exception-handling/material-disposal"
-                  @click="navigateTo('/production-quality/exception-handling/material-disposal')">进料不良异常处理</a-menu-item>
+                  @click="navigateTo('/production-quality/exception-handling/material-disposal')">来料不合格处置单</a-menu-item>
+                <a-menu-item key="/production-quality/exception-handling/mrb-records"
+                  @click="navigateTo('/production-quality/exception-handling/mrb-records')">MRB异常处理记录</a-menu-item>
                 <a-menu-item key="supplier-kpi" @click="showDeveloping('供应商绩效考核')">供应商绩效考核</a-menu-item>
                 <a-menu-item key="supplier-chargeback" @click="showDeveloping('供应商索赔与违约考核')">供应商索赔与违约考核</a-menu-item>
               </a-sub-menu>
@@ -114,8 +118,16 @@
               <!-- 5.4 实验室管理 -->
               <a-sub-menu key="lab">
                 <template #title>🔬 实验室管理(Lab)</template>
-                <a-menu-item key="lab-apply" @click="showDeveloping('实验室送检任务申请')">实验室送检任务</a-menu-item>
-                <a-menu-item key="lab-report" @click="showDeveloping('实验室检测执行与报告')">实验室检测执行</a-menu-item>
+                <a-menu-item key="/production-quality/laboratory/lab-task-board"
+                  @click="navigateTo('/production-quality/laboratory/lab-task-board')">送检任务工作台</a-menu-item>
+                <a-menu-item key="/production-quality/laboratory/lab-task-execution"
+                  @click="navigateTo('/production-quality/laboratory/lab-task-execution')">内部实验登记</a-menu-item>
+                <a-menu-item key="/production-quality/laboratory/outsource-test"
+                  @click="navigateTo('/production-quality/laboratory/outsource-test')">委外检测管理</a-menu-item>
+                <a-menu-item key="/production-quality/laboratory/sample-retention"
+                  @click="navigateTo('/production-quality/laboratory/sample-retention')">留样管理台账</a-menu-item>
+                <a-menu-item key="/production-quality/laboratory/report-library"
+                  @click="navigateTo('/production-quality/laboratory/report-library')">检测/试验报告库</a-menu-item>
                 <a-menu-item key="lab-device" @click="showDeveloping('检测仪器设备监控')">检测仪器设备监控</a-menu-item>
               </a-sub-menu>
               <!-- 5.5 集成控制台 -->

@@ -220,10 +220,10 @@ export interface InspectionItem extends BaseEntity {
   defaultInstTypeId?: string
   /** 默认量检具类型名称（冗余） */
   defaultInstTypeName?: string
-  /** 默认是否送检实验室 */
-  isLabTestDefault: boolean
-  /** 默认是否启用SPC监控 */
-  isSpcDefault: boolean
+  /** 是否送检实验室 */
+  isLabRequired: boolean
+  /** 是否启用SPC监控 */
+  isSPCRequired: boolean
   /** 描述 */
   description?: string
   /** 状态：启用/禁用 */
@@ -393,9 +393,9 @@ export interface InspTemplateDetail extends BaseEntity {
   frequencyUnit?: string
   // 开关配置（从主数据默认带出，可修改）
   /** 是否启用SPC监控 */
-  spcEnabled: boolean
+  isSPCRequired: boolean
   /** 是否送检实验室 */
-  labRequired: boolean
+  isLabRequired: boolean
   /** SIP文件附件 */
   attachmentId?: string
   /** 关联的不良现象ID列表（用于防错） */
@@ -473,9 +473,9 @@ export interface InspSchemeDetail extends BaseEntity {
   frequencyValue?: number
   frequencyUnit?: string
   /** 是否启用SPC监控 */
-  spcEnabled: boolean
+  isSPCRequired: boolean
   /** 是否送检实验室 */
-  labRequired: boolean
+  isLabRequired: boolean
   /** SIP 附件 */
   attachmentId?: string
   /** 关联不良现象（防错） */
@@ -1093,4 +1093,263 @@ export interface SimulationResult {
     schemeName: string
     inspType: InspContextType
   }
+}
+
+// ===============================
+// 实验室检测任务类型定义
+// ===============================
+
+/** 实验室任务状态 */
+export type LabTaskStatus = 'PENDING_RECEIVE' | 'PENDING_TEST' | 'IN_PROGRESS' | 'OUTSOURCING' | 'COMPLETED' | 'CANCELLED'
+
+/** 实验室任务处理类型 */
+export type LabProcessType = 'INTERNAL' | 'EXTERNAL'
+
+/** 实验室任务来源类型 */
+export type LabSourceType = 'IQC' | 'IPQC' | 'FQC' | 'OQC' | 'MANUAL_8D' | 'MANUAL_APQP' | 'MANUAL_OTHER'
+
+/** 样品状态 */
+export type SampleStatus = 'RAW_MATERIAL' | 'WIP' | 'FINISHED' | 'RETAINED' | 'DISPOSED'
+
+/** 实验室任务优先级 */
+export type LabTaskPriority = 'NORMAL' | 'URGENT' | 'CRITICAL'
+
+/** 实验室检测任务 */
+export interface LabTask extends BaseEntity {
+  /** 组织/工厂ID */
+  orgId: string
+  /** 实验室任务编号 (自动生成, LAB-YYYYMMDD-XXXX) */
+  taskNo: string
+  /** 来源类型 */
+  sourceType: LabSourceType
+  /** 来源检验任务单号 (如 TSK-IQC-...) */
+  sourceTaskNo?: string
+  /** 来源外部单据号 (收货单/生产批号/8D单号) */
+  sourceBillNo?: string
+  /** 检验项目编码 */
+  inspItemCode: string
+  /** 检验项目名称（冗余） */
+  inspItemName: string
+  /** 物料编码 */
+  materialCode: string
+  /** 物料名称（冗余） */
+  materialName?: string
+  /** 批次号 */
+  batchNo: string
+  /** 任务状态 */
+  status: LabTaskStatus
+  /** 处理类型: 内部/委外 */
+  processType?: LabProcessType
+  /** 优先级 */
+  priority: LabTaskPriority
+  /** 是否加急 */
+  isUrgent: boolean
+  /** 样品唯一标识码 (SPL-YYYYMMDD-XXXX) */
+  sampleCode?: string
+  /** 样品状态 */
+  sampleStatus?: SampleStatus
+  /** 留样到期日期 */
+  retentionDate?: string
+  /** 接收时间（样品签收时刻） */
+  receivedAt?: string
+  /** 完成时间 */
+  completedAt?: string
+  /** 实验室经办人ID */
+  operatorId?: string
+  /** 实验室经办人名称（冗余） */
+  operatorName?: string
+  /** 检验方法ID */
+  inspMethodId?: string
+  /** 检验方法名称（冗余） */
+  inspMethodName?: string
+  /** 量检具类型ID */
+  gaugeTypeId?: string
+  /** 量检具类型名称（冗余） */
+  gaugeTypeName?: string
+  /** 委外机构名称 */
+  externalOrgName?: string
+  /** 委外联系人 */
+  externalContact?: string
+  /** 委外报价(元) */
+  externalQuotation?: number
+  /** 预期完成时间 */
+  expectedCompletionDate?: string
+  /** 超时标记 (由定时任务更新) */
+  isOverdue: boolean
+  /** 审核状态 */
+  reviewStatus?: 'PENDING' | 'APPROVED' | 'REJECTED'
+  /** 审核人ID */
+  reviewerId?: string
+  /** 审核人名称 */
+  reviewerName?: string
+  /** 审核意见 */
+  reviewComment?: string
+  /** 备注说明 */
+  remark?: string
+  /** 是否启用盲测模式 */
+  isBlindTest?: boolean
+}
+
+/** 实验室检测结果判定 */
+export type LabJudgment = 'PASS' | 'FAIL' | 'CONDITIONAL'
+
+/** 实验室检测结果 */
+export interface LabResult extends BaseEntity {
+  /** 关联实验室任务编号 */
+  taskNo: string
+  /** 数据类型: 计量型/计数型 */
+  dataType: 'QUANTITATIVE' | 'QUALITATIVE'
+  /** 目标值 */
+  targetValue?: number
+  /** 规格上限 */
+  upperLimit?: number
+  /** 规格下限 */
+  lowerLimit?: number
+  /** 单位 */
+  unit?: string
+  /** 实际测量值 (支持 IoT 和人工录入) */
+  measuredValue?: string
+  /** 计数型判定标准描述 */
+  standardDesc?: string
+  /** 计数型期望结果 */
+  expectedValue?: string
+  /** 实际判定结果 */
+  judgment: LabJudgment
+  /** 数据采集方式 */
+  dataSource: 'MANUAL' | 'IOT_DEVICE' | 'EXTERNAL_REPORT'
+  /** IoT 设备编号 */
+  deviceId?: string
+  /** 原始数据文件链接 */
+  rawDataLink?: string
+  /** 检测报告附件链接 */
+  reportUrl?: string
+  /** 是否为致命缺陷 */
+  isCritical: boolean
+  /** 缺陷现象编码 (Fail时) */
+  phenomenonCode?: string
+  /** 缺陷现象名称（冗余） */
+  phenomenonName?: string
+  /** 检测时间 */
+  testedAt: string
+  /** 检测人员 */
+  tester?: string
+  /** 备注 */
+  remark?: string
+}
+
+/** 实验室任务列表查询参数 */
+export interface LabTaskQueryParams {
+  orgId?: string
+  status?: LabTaskStatus
+  processType?: LabProcessType
+  sourceType?: LabSourceType
+  priority?: LabTaskPriority
+  isUrgent?: boolean
+  isOverdue?: boolean
+  materialCode?: string
+  batchNo?: string
+  taskNo?: string
+  sampleCode?: string
+  sourceTaskNo?: string
+  keyword?: string
+  startDate?: string
+  endDate?: string
+  page?: number
+  pageSize?: number
+}
+
+/** 实验室任务统计看板 */
+export interface LabTaskStats {
+  /** 待接收数量 */
+  pendingReceiveCount: number
+  /** 检测中数量 */
+  inProgressCount: number
+  /** 委外中数量 */
+  outsourcingCount: number
+  /** 今日完成数量 */
+  completedTodayCount: number
+  /** 已超时数量 */
+  overdueCount: number
+  /** 本月合格率 */
+  monthlyPassRate: number
+}
+
+// ===============================
+// 留样管理台账类型定义
+// ===============================
+
+/** 留样状态 */
+export type LabSampleRetentionStatus = 'RETAINED' | 'DISPOSED' | 'RETURNED'
+
+/** 留样管理台账记录 */
+export interface LabSample extends BaseEntity {
+  /** 样品唯一标识码 */
+  sampleCode: string
+  /** 关联实验室任务编号 */
+  taskNo: string
+  /** 物料编码 */
+  materialCode: string
+  /** 物料名称 */
+  materialName?: string
+  /** 批次号 */
+  batchNo: string
+  /** 库房存放库位 */
+  location: string
+  /** 留样状态 */
+  retentionStatus: LabSampleRetentionStatus
+  /** 存入日期 */
+  depositDate: string
+  /** 预定销毁日期 (自动推算三个月后) */
+  retentionDate: string
+  /** 实际处置日期 */
+  disposedDate?: string
+  /** 留样负责人 */
+  handler?: string
+  /** 处置人 */
+  disposer?: string
+  /** 处置方式说明 */
+  disposeRemark?: string
+}
+
+// ===============================
+// 检测/试验报告库类型定义
+// ===============================
+
+/** 报告审核状态 */
+export type LabReportReviewStatus = 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
+
+/** 检测/试验报告 */
+export interface LabReport extends BaseEntity {
+  /** 报告编号 */
+  reportNo: string
+  /** 关联实验室任务编号 */
+  taskNo: string
+  /** 物料编码 */
+  materialCode: string
+  /** 物料名称 */
+  materialName?: string
+  /** 批次号 */
+  batchNo: string
+  /** 检验项目名称 */
+  inspItemName: string
+  /** 报告文件链接 (PDF) */
+  fileUrl?: string
+  /** 委外报告附件链接 */
+  externalFileUrl?: string
+  /** 综合判定结论 */
+  judgment: LabJudgment
+  /** 审核状态 */
+  reviewStatus: LabReportReviewStatus
+  /** 审核人 */
+  reviewerName?: string
+  /** 审核时间 */
+  reviewedAt?: string
+  /** 审核意见 */
+  reviewComment?: string
+  /** 报告生成方式 */
+  generatedBy: 'AUTO' | 'MANUAL' | 'EXTERNAL'
+  /** 来源类型 */
+  sourceType?: LabSourceType
+  /** 检测完成时间 */
+  completedAt?: string
 }

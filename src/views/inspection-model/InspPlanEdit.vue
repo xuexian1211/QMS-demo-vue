@@ -113,11 +113,11 @@
           </div>
           <a-table :columns="detailColumns" :data-source="details" row-key="id" size="small" :pagination="false">
             <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'isLabTestRequired'">
-                <a-switch v-model:checked="record.isLabTestRequired" :disabled="isView" size="small" />
+              <template v-if="column.key === 'isLabRequired'">
+                <a-switch v-model:checked="record.isLabRequired" :disabled="isView" size="small" />
               </template>
-              <template v-if="column.key === 'isSpcRequired'">
-                <a-switch v-model:checked="record.isSpcRequired" :disabled="isView" size="small" />
+              <template v-if="column.key === 'isSPCRequired'">
+                <a-switch v-model:checked="record.isSPCRequired" :disabled="isView" size="small" />
               </template>
               <template v-if="column.key === 'action'">
                 <a-space v-if="!isView">
@@ -323,8 +323,8 @@
     { title: '抽样规则', dataIndex: 'samplingRuleName', key: 'samplingRuleName', width: 150 },
     { title: '检验方法', dataIndex: 'methodName', key: 'methodName', width: 120 },
     { title: '量检具', dataIndex: 'instrumentName', key: 'instrumentName', width: 100 },
-    { title: '实验室', key: 'isLabTestRequired', width: 80 },
-    { title: 'SPC', key: 'isSpcRequired', width: 60 },
+    { title: '实验室', key: 'isLabRequired', width: 80 },
+    { title: 'SPC', key: 'isSPCRequired', width: 60 },
     { title: '操作', key: 'action', width: 120 }
   ]
 
@@ -399,8 +399,8 @@
       samplingRuleName: 'AQL 0.65 Level II',
       methodName: '卡尺测量',
       instrumentName: '游标卡尺',
-      isLabTestRequired: false,
-      isSpcRequired: true
+      isLabRequired: false,
+      isSPCRequired: true
     })
     message.success('已添加明细')
   }
@@ -498,7 +498,7 @@
         { id: '801', contextType: 'IPQC', materialCode: 'M007', materialName: '压铸件壳体', supplierName: '', operationName: '压铸工序', priority: 10 }
       ]
       details.value = [
-        { id: '701', itemName: '壳体A面平面度', samplingRuleName: 'AQL 0.65', methodName: '三坐标测量', instrumentName: '三坐标测量机', isLabTestRequired: false, isSpcRequired: true }
+        { id: '701', itemName: '壳体A面平面度', samplingRuleName: 'AQL 0.65', methodName: '三坐标测量', instrumentName: '三坐标测量机', isLabRequired: false, isSPCRequired: true }
       ]
       phenomenonMaps.value = [
         { id: '1', itemName: '壳体A面平面度', phenomenonName: '平面度超差', categoryName: '尺寸类' }

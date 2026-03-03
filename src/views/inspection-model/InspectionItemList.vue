@@ -126,8 +126,8 @@
                     <!-- SPC/实验室标记 -->
                     <template v-else-if="column.key === 'flags'">
                         <a-space>
-                            <a-tag v-if="record.isSpcDefault" color="green">SPC</a-tag>
-                            <a-tag v-if="record.isLabTestDefault" color="orange">实验室</a-tag>
+                            <a-tag v-if="record.isSPCRequired" color="green">SPC</a-tag>
+                            <a-tag v-if="record.isLabRequired" color="orange">实验室</a-tag>
                         </a-space>
                     </template>
                     <!-- 状态列 -->
@@ -348,15 +348,15 @@
             // Mock data - 增强版数据（包含集团、合肥工厂、芜湖工厂）
             let data = [
                 // 集团标准（orgId = null）
-                { id: '1', orgId: null, code: 'ITEM-G-LENGTH', name: '长度检测', category: 'dimension' as InspectionItemCategory, dataType: 'quantitative', uom: 'mm', defaultMethodId: '101', defaultMethodName: '卡尺测量法', isSpcDefault: true, isLabTestDefault: false, description: '集团标准长度检测项目', status: 'enabled' },
-                { id: '2', orgId: null, code: 'ITEM-G-HARDNESS', name: '洛氏硬度', category: 'physical_chemical' as InspectionItemCategory, dataType: 'quantitative', uom: 'HRC', defaultMethodId: '102', defaultMethodName: '硬度计测量', isSpcDefault: true, isLabTestDefault: true, description: '集团标准硬度检测', status: 'enabled' },
+                { id: '1', orgId: null, code: 'ITEM-G-LENGTH', name: '长度检测', category: 'dimension' as InspectionItemCategory, dataType: 'quantitative', uom: 'mm', defaultMethodId: '101', defaultMethodName: '卡尺测量法', isSPCRequired: true, isLabRequired: false, description: '集团标准长度检测项目', status: 'enabled' },
+                { id: '2', orgId: null, code: 'ITEM-G-HARDNESS', name: '洛氏硬度', category: 'physical_chemical' as InspectionItemCategory, dataType: 'quantitative', uom: 'HRC', defaultMethodId: '102', defaultMethodName: '硬度计测量', isSPCRequired: true, isLabRequired: true, description: '集团标准硬度检测', status: 'enabled' },
                 // 合肥工厂（orgId = '1'）
-                { id: '3', orgId: '1', code: 'ITEM-HF-SURFACE', name: '表面外观检查', category: 'appearance' as InspectionItemCategory, dataType: 'qualitative', uom: '', defaultMethodId: '103', defaultMethodName: '目视检查', isSpcDefault: false, isLabTestDefault: false, description: '合肥工厂本地外观检查', status: 'enabled' },
-                { id: '4', orgId: '1', code: 'ITEM-HF-COATING', name: '涂层厚度', category: 'dimension' as InspectionItemCategory, dataType: 'quantitative', uom: 'μm', defaultMethodId: '104', defaultMethodName: '涂层测厚仪', isSpcDefault: true, isLabTestDefault: false, description: '合肥工厂专用涂层检测', status: 'enabled' },
-                { id: '5', orgId: '1', code: 'ITEM-HF-SALT', name: '盐雾测试', category: 'functional' as InspectionItemCategory, dataType: 'qualitative', uom: '', defaultMethodId: '105', defaultMethodName: '盐雾试验法', isSpcDefault: false, isLabTestDefault: true, description: '合肥工厂特殊测试项目', status: 'disabled' },
+                { id: '3', orgId: '1', code: 'ITEM-HF-SURFACE', name: '表面外观检查', category: 'appearance' as InspectionItemCategory, dataType: 'qualitative', uom: '', defaultMethodId: '103', defaultMethodName: '目视检查', isSPCRequired: false, isLabRequired: false, description: '合肥工厂本地外观检查', status: 'enabled' },
+                { id: '4', orgId: '1', code: 'ITEM-HF-COATING', name: '涂层厚度', category: 'dimension' as InspectionItemCategory, dataType: 'quantitative', uom: 'μm', defaultMethodId: '104', defaultMethodName: '涂层测厚仪', isSPCRequired: true, isLabRequired: false, description: '合肥工厂专用涂层检测', status: 'enabled' },
+                { id: '5', orgId: '1', code: 'ITEM-HF-SALT', name: '盐雾测试', category: 'functional' as InspectionItemCategory, dataType: 'qualitative', uom: '', defaultMethodId: '105', defaultMethodName: '盐雾试验法', isSPCRequired: false, isLabRequired: true, description: '合肥工厂特殊测试项目', status: 'disabled' },
                 // 芜湖工厂（orgId = '2'）
-                { id: '6', orgId: '2', code: 'ITEM-WH-TORQUE', name: '扭矩检测', category: 'functional' as InspectionItemCategory, dataType: 'quantitative', uom: 'N·m', defaultMethodId: '106', defaultMethodName: '扭矩扳手测量', isSpcDefault: true, isLabTestDefault: false, description: '芜湖工厂扭矩检测项目', status: 'enabled' },
-                { id: '7', orgId: '2', code: 'ITEM-WH-WEIGHT', name: '重量检测', category: 'dimension' as InspectionItemCategory, dataType: 'quantitative', uom: 'g', defaultMethodId: '107', defaultMethodName: '电子秤称重', isSpcDefault: false, isLabTestDefault: false, description: '芜湖工厂重量检测项目', status: 'enabled' },
+                { id: '6', orgId: '2', code: 'ITEM-WH-TORQUE', name: '扭矩检测', category: 'functional' as InspectionItemCategory, dataType: 'quantitative', uom: 'N·m', defaultMethodId: '106', defaultMethodName: '扭矩扳手测量', isSPCRequired: true, isLabRequired: false, description: '芜湖工厂扭矩检测项目', status: 'enabled' },
+                { id: '7', orgId: '2', code: 'ITEM-WH-WEIGHT', name: '重量检测', category: 'dimension' as InspectionItemCategory, dataType: 'quantitative', uom: 'g', defaultMethodId: '107', defaultMethodName: '电子秤称重', isSPCRequired: false, isLabRequired: false, description: '芜湖工厂重量检测项目', status: 'enabled' },
             ]
 
             // 过滤逻辑

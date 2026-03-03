@@ -105,13 +105,13 @@
                 <a-row :gutter="24">
                     <a-col :span="8">
                         <a-form-item label="默认送实验室">
-                            <a-switch v-model:checked="form.isLabTestDefault" :disabled="isView || isReadOnly"
+                            <a-switch v-model:checked="form.isLabRequired" :disabled="isView || isReadOnly"
                                 checked-children="是" un-checked-children="否" />
                         </a-form-item>
                     </a-col>
                     <a-col :span="8">
                         <a-form-item label="默认启用SPC">
-                            <a-switch v-model:checked="form.isSpcDefault" :disabled="isView || isReadOnly"
+                            <a-switch v-model:checked="form.isSPCRequired" :disabled="isView || isReadOnly"
                                 checked-children="是" un-checked-children="否" />
                         </a-form-item>
                     </a-col>
@@ -220,8 +220,8 @@
         defaultMethodName: '',
         defaultInstTypeId: undefined as string | undefined,
         defaultInstTypeName: '',
-        isLabTestDefault: false,
-        isSpcDefault: false,
+        isLabRequired: false,
+        isSPCRequired: false,
         description: '',
         status: 'enabled' as 'enabled' | 'disabled',
         relatedDefects: [] as any[]
@@ -369,7 +369,7 @@
                     category: 'dimension', dataType: 'quantitative', uom: 'mm',
                     defaultMethodId: '101', defaultMethodName: '卡尺测量法',
                     defaultInstTypeId: '201', defaultInstTypeName: '0-150mm 数显卡尺',
-                    isLabTestDefault: false, isSpcDefault: true,
+                    isLabRequired: false, isSPCRequired: true,
                     description: '集团标准长度检测项目', status: 'enabled',
                     relatedDefects: [
                         { id: '106', code: 'DEF-006', name: '尺寸超差', severity: 'MA', description: '尺寸超出公差范围' }
@@ -380,7 +380,7 @@
                     category: 'physical_chemical', dataType: 'quantitative', uom: 'HRC',
                     defaultMethodId: '102', defaultMethodName: '硬度计测量',
                     defaultInstTypeId: '202', defaultInstTypeName: '洛氏硬度计',
-                    isLabTestDefault: true, isSpcDefault: true,
+                    isLabRequired: true, isSPCRequired: true,
                     description: '集团标准硬度检测', status: 'enabled',
                     relatedDefects: [
                         { id: '107', code: 'DEF-007', name: '硬度不足', severity: 'CR', description: '硬度低于标准值' }
@@ -391,7 +391,7 @@
                     category: 'appearance', dataType: 'qualitative', uom: '',
                     defaultMethodId: '103', defaultMethodName: '目视检查',
                     defaultInstTypeId: undefined, defaultInstTypeName: '',
-                    isLabTestDefault: false, isSpcDefault: false,
+                    isLabRequired: false, isSPCRequired: false,
                     description: '合肥工厂本地外观检查', status: 'enabled',
                     relatedDefects: [
                         { id: '101', code: 'DEF-001', name: '表面划伤', severity: 'MI', description: '可见划痕' },
@@ -403,7 +403,7 @@
                     category: 'dimension', dataType: 'quantitative', uom: 'μm',
                     defaultMethodId: '104', defaultMethodName: '涂层测厚仪',
                     defaultInstTypeId: '203', defaultInstTypeName: '涂层测厚仪',
-                    isLabTestDefault: false, isSpcDefault: true,
+                    isLabRequired: false, isSPCRequired: true,
                     description: '合肥工厂专用涂层检测', status: 'enabled',
                     relatedDefects: []
                 },
@@ -412,7 +412,7 @@
                     category: 'functional', dataType: 'qualitative', uom: '',
                     defaultMethodId: '105', defaultMethodName: '盐雾试验法',
                     defaultInstTypeId: undefined, defaultInstTypeName: '',
-                    isLabTestDefault: true, isSpcDefault: false,
+                    isLabRequired: true, isSPCRequired: false,
                     description: '合肥工厂特殊测试项目', status: 'disabled',
                     relatedDefects: []
                 }
