@@ -29,7 +29,7 @@
 
   // 读取项目里所有的PRD markdown 和 txt
   // glob 的以 '/' 开头会以项目根目录为基准解析
-  const modules = import.meta.glob('/PRD/**/*.{md,txt}', { as: 'raw', eager: true });
+  const modules = import.meta.glob('/PRD/**/*.{md,txt}', { query: '?raw', import: 'default', eager: true });
 
   interface TreeNode {
     title: string;
