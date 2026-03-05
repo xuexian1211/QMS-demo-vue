@@ -373,6 +373,59 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   },
+  // ========================
+  // 变化点管理模块 - 所有 PC 端路由
+  // ========================
+  {
+    path: '/production-quality/change-point/dashboard',
+    name: 'ChangePointDashboard',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '变化点中央看板' },
+    children: [{ path: '', component: () => import('@/views/production-quality/change-point/ChangePointDashboard.vue') }]
+  },
+  {
+    path: '/production-quality/change-point/list',
+    name: 'ChangePointList',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '变化点台账与追溯' },
+    children: [{ path: '', component: () => import('@/views/production-quality/change-point/ChangePointList.vue') }]
+  },
+  {
+    path: '/production-quality/change-point/list/create',
+    name: 'ChangePointCreate',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '新增变化点申报', hideInMenu: true },
+    children: [{ path: '', component: () => import('@/views/production-quality/change-point/ChangePointEdit.vue') }]
+  },
+  {
+    path: '/production-quality/change-point/list/edit/:id',
+    name: 'ChangePointEdit',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '编辑变化点处理单', hideInMenu: true },
+    children: [{ path: '', component: () => import('@/views/production-quality/change-point/ChangePointEdit.vue') }]
+  },
+  {
+    path: '/production-quality/change-point/list/view/:id',
+    name: 'ChangePointView',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '查看变化点处理单', hideInMenu: true },
+    children: [{ path: '', component: () => import('@/views/production-quality/change-point/ChangePointEdit.vue') }]
+  },
+  {
+    path: '/production-quality/change-point/verification',
+    name: 'VerificationCenter',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '试生产验证任务中心' },
+    children: [{ path: '', component: () => import('@/views/production-quality/change-point/VerificationCenter.vue') }]
+  },
+  {
+    path: '/production-quality/change-point/risk-matrix',
+    name: 'RiskMatrixConfig',
+    component: () => import('@/layout/MainLayout.vue'),
+    meta: { title: '风险矩阵与规则配置' },
+    children: [{ path: '', component: () => import('@/views/production-quality/change-point/RiskMatrixConfig.vue') }]
+  },
+  // ========================
   {
     path: '/production-quality/exception-handling/qrqc-response',
     name: 'QRQCResponse',

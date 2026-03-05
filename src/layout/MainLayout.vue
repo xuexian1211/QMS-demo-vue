@@ -159,8 +159,18 @@
               <a-menu-item key="/customer" @click="navigateTo('/customer')">客诉/客退登记与处理</a-menu-item>
               <a-menu-item key="8d" @click="showDeveloping('AIAG 8D报告管理与追踪')">8D报告管理与追踪</a-menu-item>
               <a-menu-item key="capa" @click="showDeveloping('纠正与预防措施(CAPA)管理')">纠正与预防措施管理</a-menu-item>
-              <a-menu-item key="/production-quality/exception-handling/change-point-application"
-                @click="navigateTo('/production-quality/exception-handling/change-point-application')">变化点申请与评估</a-menu-item>
+              <!-- 变化点管理 -->
+              <a-sub-menu key="change-point">
+                <template #title>🔄 变化点管理 (4M1E)</template>
+                <a-menu-item key="/production-quality/change-point/dashboard"
+                  @click="navigateTo('/production-quality/change-point/dashboard')">📊 变化点中央看板</a-menu-item>
+                <a-menu-item key="/production-quality/change-point/list"
+                  @click="navigateTo('/production-quality/change-point/list')">📋 申报工作台与台账</a-menu-item>
+                <a-menu-item key="/production-quality/change-point/verification"
+                  @click="navigateTo('/production-quality/change-point/verification')">🔬 试生产验证任务中心</a-menu-item>
+                <a-menu-item key="/production-quality/change-point/risk-matrix"
+                  @click="navigateTo('/production-quality/change-point/risk-matrix')">⚙️ 风险矩阵规则配置</a-menu-item>
+              </a-sub-menu>
             </a-sub-menu>
 
             <!-- 8. 数字化追溯 (Digital Traceability) -->
