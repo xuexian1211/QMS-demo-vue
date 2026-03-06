@@ -229,7 +229,7 @@
               <a-menu-item key="/system/config" @click="navigateTo('/system/config')">系统参数</a-menu-item>
               <a-menu-item key="/system/template" @click="navigateTo('/system/template')">系统模板</a-menu-item>
               <a-menu-item key="/system/data-app" @click="navigateTo('/system/data-app')">数据应用</a-menu-item>
-              <a-menu-item key="/system/update-log" @click="navigateTo('/system/update-log')">系统更新日志</a-menu-item>
+              <a-menu-item key="/system/project-docs" @click="navigateTo('/system/project-docs')">项目文档</a-menu-item>
               <a-menu-item key="/system/announcement" @click="navigateTo('/system/announcement')">系统公告</a-menu-item>
               <a-menu-item key="system-config-sys" @click="showDeveloping('系统配置')">系统配置</a-menu-item>
               <a-menu-item key="/system/menu" @click="navigateTo('/system/menu')">菜单管理</a-menu-item>
@@ -249,8 +249,8 @@
               @blur="handleSearchBlur" @click.stop ref="searchInput" style="width: 200px" />
           </div>
           <a-space>
-            <a-tooltip title="系统更新日志">
-              <span class="update-log-icon" @click="navigateTo('/system/update-log')">📝</span>
+            <a-tooltip title="项目文档">
+              <span class="update-log-icon" @click="navigateTo('/system/project-docs')">📝</span>
             </a-tooltip>
             <a-badge count="5">
               <span class="notification-icon">🔔</span>

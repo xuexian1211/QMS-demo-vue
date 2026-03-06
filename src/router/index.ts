@@ -672,16 +672,16 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   },
-  // 需求文档列表
+  // 项目文档 - 统一浏览 QMS-BRD 与 QMS-PRD 文档，支持 Mermaid 渲染和 MD/PDF 导出
   {
-    path: '/system/update-log',
-    name: 'UpdateLog',
+    path: '/system/project-docs',
+    name: 'ProjectDocs',
     component: () => import('@/layout/MainLayout.vue'),
-    meta: { title: '需求文档' },
+    meta: { title: '项目文档' },
     children: [
       {
         path: '',
-        component: () => import('@/views/system/UpdateLog.vue')
+        component: () => import('@/views/system/ProjectDocs.vue')
       }
     ]
   },
