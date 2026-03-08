@@ -9,4 +9,10 @@ export interface QualityRecord {
   supplierName: string
   batchNo: string
   quantity: number
-  status: 'pending' | 'processing' | 'qualified' | 'unqualified
+  status: 'pending' | 'processing' | 'qualified' | 'unqualified'
+}
+
+export const useQualityStore = defineStore('quality', () => {
+  const records = ref<QualityRecord[]>([])
+  return { records }
+})
