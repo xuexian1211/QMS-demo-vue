@@ -1,4 +1,4 @@
-// 通用接口定义
+﻿// 通用接口定义
 export interface BaseEntity {
   id: string
   createTime: string
@@ -932,79 +932,85 @@ export type DocModule =
 /** 文档主存来源 */
 export type DocStorageSource = 'PLM' | 'QMS'
 
-/** 文档生命周期状态 */
-export type ControlledDocStatus = 'DRAFT' | 'IN_APPROVAL' | 'PUBLISHED' | 'OBSOLETE'
+export type DocumentType = 'DRAWING' | 'SPECIFICATION' | 'PROCEDURE' | 'STANDARD' | 'CERTIFICATE' | 'REPORT'
 
-/** 文档分类树节点 */
+export type DocumentCategory = 'DESIGN' | 'PROCESS' | 'QUALITY' | 'PURCHASING'
+
+export type DocumentSecurityLevel = 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL' | 'SECRET'
+
+export type DocumentLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
+
+export type ControlledDocStatus = 'DRAFT' | 'UNDER_REVISION' | 'RELEASED' | 'OBSOLETE'
+
 export interface DocCategoryNode {
   key: string
   title: string
   bizScene?: DocBizScene
   docModule?: DocModule
-  /** 该分类的主存来源（同一模块下可能混合） */
   primaryStorage?: DocStorageSource
-  /** 是否叶子节点 */
   isLeaf?: boolean
-  /** 子节点 */
   children?: DocCategoryNode[]
 }
 
-/** 受控文档实体 */
 export interface ControlledDocument extends BaseEntity {
-  /** 组织ID */
   orgId: string
-  /** 文档编号 */
-  docNo: string
-  /** 文档名称 */
-  docName: string
-  /** 版本号 */
-  version: string
-  /** 一级分类 */
+  documentId: string
+  documentName: string
+  documentType: DocumentType
+  documentVersion: string
+  documentStatus: ControlledDocStatus
   bizScene: DocBizScene
-  /** 二级模块 */
   docModule: DocModule
-  /** 核心图文档类型（第三级，如 产品图纸/3D模型/BOM） */
-  docType: string
-  /** 主存来源：PLM 表示来自PLM系统（只读）; QMS 表示本地全生命周期管理 */
   storageSource: DocStorageSource
-  /** 生命周期状态 */
-  status: ControlledDocStatus
-  /** 文件大小描述 */
-  fileSize?: string
-  /** 文件格式 */
   fileFormat?: string
-  /** PLM 文档ID（storageSource=PLM 时有值） */
-  plmDocId?: string
-  /** PLM 最后同步时间 */
-  plmSyncTime?: string
-  /** 附件 ID 列表（storageSource=QMS 时有效） */
+  fileSize?: number
+  language?: DocumentLanguage
+  securityLevel?: DocumentSecurityLevel
+  relatedProductCode?: string
+  relatedProductVersion?: string
+  relatedMaterialCode?: string
+  documentCategory?: DocumentCategory
+  keywords?: string
+  description?: string
+  author?: string
+  department?: string
+  approver?: string
+  approvalDate?: string
+  effectiveDate?: string
+  expiryDate?: string
+  plmStoragePath?: string
+  downloadUrl?: string
+  previewUrl?: string
+  checksum?: string
+  plmCreateTime?: string
+  plmUpdateTime?: string
+  plmOperator?: string
   attachmentIds?: string[]
-  /** 上传人/同步人 */
   uploader?: string
-  /** 发布时间 */
   publishedAt?: string
-  /** 作废原因 */
   obsoleteReason?: string
-  /** 备注 */
   remark?: string
 }
 
-/** 文档版本记录 */
 export interface DocVersionRecord {
-  version: string
+  documentVersion: string
   operator: string
   operateTime: string
   remark?: string
-  status: ControlledDocStatus
+  documentStatus: ControlledDocStatus
+  source?: 'MANUAL' | 'PLM_SYNC' | 'RESTORE'
 }
 
-/** 受控文档查询参数 */
 export interface ControlledDocQueryParams {
   bizScene?: DocBizScene
   docModule?: DocModule
   storageSource?: DocStorageSource
-  status?: ControlledDocStatus
+  documentStatus?: ControlledDocStatus
+  documentType?: DocumentType
+  documentCategory?: DocumentCategory
+  securityLevel?: DocumentSecurityLevel
   keyword?: string
+  documentId?: string
   page?: number
   pageSize?: number
 }
@@ -1353,3 +1359,4 @@ export interface LabReport extends BaseEntity {
   /** 检测完成时间 */
   completedAt?: string
 }
+
